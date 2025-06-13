@@ -116,16 +116,12 @@ const HelloTriangleApplication = struct {
         null,
         ) orelse return error.WindowInitFailed;
         if (self.window) |window| c.glfwSetWindowUserPointer(window, self);
-        // if (self.window) |window| c.glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-        // self.window.?.setUserPointer(self);
-        // self.window.?.setFramebufferSizeCallback(framebufferResizeCallback);
+        _ = c.glfwSetFramebufferSizeCallback(self.window, framebufferResizeCallback);
     }
 
     fn framebufferResizeCallback(window: ?*c.GLFWwindow, _: c_int, _: c_int) callconv(.c) void {
-        var self: *Self = c.glfwGetWindowUserPointer(window);
-        if (self != null) {
-            self.?.framebuffer_resized = true;
-        }
+        var self: *Self = @ptrCast(@alignCast(c.glfwGetWindowUserPointer(window)));
+        self.framebuffer_resized = true;
     }
 
     fn initVulkan(self: *Self) !void {
@@ -154,30 +150,26 @@ const HelloTriangleApplication = struct {
     }
 
     fn cleanupSwapChain(self: *Self) void {
-        if (self.swap_chain_framebuffers != null) {
-            for (self.swap_chain_framebuffers.?) |framebuffer| {
+        if (self.swap_chain_framebuffers) |swap_chain_framebuffers| {
+            for (swap_chain_framebuffers) |framebuffer| {
                 self.device.destroyFramebuffer(framebuffer, null);
             }
-            self.allocator.free(self.swap_chain_framebuffers.?);
-            self.swap_chain_framebuffers = null;
+            self.allocator.free(swap_chain_framebuffers);
         }
 
-        if (self.swap_chain_image_views != null) {
-            for (self.swap_chain_image_views.?) |image_view| {
+        if (self.swap_chain_image_views) |swap_chain_image_views| {
+            for (swap_chain_image_views) |image_view| {
                 self.device.destroyImageView(image_view, null);
             }
-            self.allocator.free(self.swap_chain_image_views.?);
-            self.swap_chain_image_views = null;
+            self.allocator.free(swap_chain_image_views);
         }
 
-        if (self.swap_chain_images != null) {
-            self.allocator.free(self.swap_chain_images.?);
-            self.swap_chain_images = null;
+        if (self.swap_chain_images) |swap_chain_images| {
+            self.allocator.free(swap_chain_images);
         }
 
         if (self.swap_chain != .null_handle) {
             self.device.destroySwapchainKHR(self.swap_chain, null);
-            self.swap_chain = .null_handle;
         }
     }
 
@@ -186,6 +178,7 @@ const HelloTriangleApplication = struct {
 
         self.device.destroyPipeline(self.graphics_pipeline, null);
         self.device.destroyPipelineLayout(self.pipeline_layout, null);
+
         self.device.destroyRenderPass(self.render_pass, null);
 
         if (self.render_finished_semaphores) |render_finished_semaphores| {
@@ -210,26 +203,6 @@ const HelloTriangleApplication = struct {
         self.device.destroyCommandPool(self.command_pool, null);
         if (self.command_buffers) |command_buffers| self.allocator.free(command_buffers);
 
-        if (self.swap_chain_framebuffers) |swap_chain_framebuffers| {
-            for (swap_chain_framebuffers) |framebuffer| {
-                self.device.destroyFramebuffer(framebuffer, null);
-            }
-            self.allocator.free(swap_chain_framebuffers);
-        }
-
-        self.device.destroyPipeline(self.graphics_pipeline, null);
-        self.device.destroyPipelineLayout(self.pipeline_layout, null);
-        self.device.destroyRenderPass(self.render_pass, null);
-
-        if (self.swap_chain_image_views) |swap_chain_image_views| {
-            for (swap_chain_image_views) |image_view| {
-                self.device.destroyImageView(image_view, null);
-            }
-            self.allocator.free(swap_chain_image_views);
-        }
-
-        if (self.swap_chain_images) |swap_chain_images| self.allocator.free(swap_chain_images);
-        self.device.destroySwapchainKHR(self.swap_chain, null);
         self.device.destroyDevice(null);
 
         if (enable_validation_layers and self.debug_messenger != .null_handle) {
@@ -442,6 +415,7 @@ const HelloTriangleApplication = struct {
         }, null);
 
         self.swap_chain_images = try self.device.getSwapchainImagesAllocKHR(self.swap_chain, self.allocator);
+        errdefer self.allocator.free(self.swap_chain_images);
 
         self.swap_chain_image_format = surface_format.format;
         self.swap_chain_extent = extent;
@@ -688,6 +662,7 @@ const HelloTriangleApplication = struct {
 
     fn createCommandBuffers(self: *Self) !void {
         self.command_buffers = try self.allocator.alloc(vk.CommandBuffer, MAX_FRAMES_IN_FLIGHT);
+        errdefer self.allocator.free(self.command_buffers.?);
 
         try self.device.allocateCommandBuffers(&.{
             .command_pool = self.command_pool,
