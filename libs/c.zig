@@ -22,7 +22,11 @@ pub const glfwDestroyWindow = c.glfwDestroyWindow;
 pub const glfwWindowShouldClose = c.glfwWindowShouldClose;
 pub const glfwGetRequiredInstanceExtensions = c.glfwGetRequiredInstanceExtensions;
 pub const glfwGetFramebufferSize = c.glfwGetFramebufferSize;
+pub const glfwSetWindowUserPointer = c.glfwSetWindowUserPointer;
+pub const glfwGetWindowUserPointer = c.glfwGetWindowUserPointer;
+pub const glfwSetFramebufferSizeCallback = c.glfwSetFramebufferSizeCallback;
 pub const glfwPollEvents = c.glfwPollEvents;
+pub const glfwWaitEvents = c.glfwWaitEvents;
 
 // usually the GLFW vulkan functions are exported if Vulkan is included,
 // but since thats not the case here, they are manually imported.

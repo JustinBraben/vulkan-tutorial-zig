@@ -1,9 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const Allocator = std.mem.Allocator;
-
-const glfw = @import("glfw");
 const vk = @import("vulkan");
+const c = @import("c");
+const Allocator = std.mem.Allocator;
 const resources = @import("resources");
 
 const WIDTH: u32 = 800;
@@ -13,7 +12,7 @@ const MAX_FRAMES_IN_FLIGHT: u32 = 2;
 
 const validation_layers = [_][*:0]const u8{"VK_LAYER_KHRONOS_validation"};
 
-const device_extensions = [_][*:0]const u8{vk.extension_info.khr_swapchain.name};
+const device_extensions = [_][*:0]const u8{vk.extensions.khr_swapchain.name};
 
 const enable_validation_layers: bool = switch (builtin.mode) {
     .Debug, .ReleaseSafe => true,
@@ -161,18 +160,18 @@ const HelloTriangleApplication = struct {
     const Self = @This();
     allocator: Allocator,
 
-    window: ?glfw.Window = null,
+    window: ?*c.GLFWwindow = null,
 
-    vkb: BaseDispatch = undefined,
-    vki: InstanceDispatch = undefined,
-    vkd: DeviceDispatch = undefined,
+    vkb: BaseWrapper = undefined,
+    vki: InstanceWrapper = undefined,
+    vkd: DeviceWrapper = undefined,
 
-    instance: vk.Instance = .null_handle,
+    instance: Instance = undefined,
     debug_messenger: vk.DebugUtilsMessengerEXT = .null_handle,
     surface: vk.SurfaceKHR = .null_handle,
 
     physical_device: vk.PhysicalDevice = .null_handle,
-    device: vk.Device = .null_handle,
+    device: Device = undefined,
 
     graphics_queue: vk.Queue = .null_handle,
     present_queue: vk.Queue = .null_handle,
@@ -316,14 +315,16 @@ const HelloTriangleApplication = struct {
 
         if (self.device != .null_handle) self.vkd.destroyDevice(self.device, null);
 
-        if (enable_validation_layers and self.debug_messenger != .null_handle) self.vki.destroyDebugUtilsMessengerEXT(self.instance, self.debug_messenger, null);
+        if (enable_validation_layers and self.debug_messenger != .null_handle) {
+            self.instance.destroyDebugUtilsMessengerEXT(self.debug_messenger, null);
+        }
 
-        if (self.surface != .null_handle) self.vki.destroySurfaceKHR(self.instance, self.surface, null);
-        if (self.instance != .null_handle) self.vki.destroyInstance(self.instance, null);
+        self.instance.destroySurfaceKHR(self.surface, null);
+        self.instance.destroyInstance(null);
 
-        if (self.window != null) self.window.?.destroy();
+        c.glfwDestroyWindow(self.window);
 
-        glfw.terminate();
+        c.glfwTerminate();
     }
 
     fn recreateSwapChain(self: *Self) !void {
@@ -344,8 +345,7 @@ const HelloTriangleApplication = struct {
     }
 
     fn createInstance(self: *Self) !void {
-        const vk_proc = @ptrCast(*const fn (instance: vk.Instance, procname: [*:0]const u8) callconv(.C) vk.PfnVoidFunction, &glfw.getInstanceProcAddress);
-        self.vkb = try BaseDispatch.load(vk_proc);
+        self.vkb = BaseWrapper.load(c.glfwGetInstanceProcAddress);
 
         if (enable_validation_layers and !try self.checkValidationLayerSupport()) {
             return error.MissingValidationLayer;
@@ -353,21 +353,21 @@ const HelloTriangleApplication = struct {
 
         const app_info = vk.ApplicationInfo{
             .p_application_name = "Hello Triangle",
-            .application_version = vk.makeApiVersion(1, 0, 0, 0),
+            .application_version = @bitCast(vk.makeApiVersion(1, 0, 0, 0)),
             .p_engine_name = "No Engine",
-            .engine_version = vk.makeApiVersion(1, 0, 0, 0),
-            .api_version = vk.API_VERSION_1_2,
+            .engine_version = @bitCast(vk.makeApiVersion(1, 0, 0, 0)),
+            .api_version = @bitCast(vk.API_VERSION_1_2),
         };
 
-        const extensions = try getRequiredExtensions(self.allocator);
+        var extensions = try getRequiredExtensions(self.allocator);
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags = .{},
+            .flags= .{},
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
-            .enabled_extension_count = @intCast(u32, extensions.items.len),
+            .enabled_extension_count = @intCast(extensions.items.len),
             .pp_enabled_extension_names = extensions.items.ptr,
         };
 
@@ -380,9 +380,10 @@ const HelloTriangleApplication = struct {
             create_info.p_next = &debug_create_info;
         }
 
-        self.instance = try self.vkb.createInstance(&create_info, null);
+        const instance = try self.vkb.createInstance(&create_info, null);
 
-        self.vki = try InstanceDispatch.load(self.instance, vk_proc);
+        self.vki = InstanceWrapper.load(instance, self.vkb.dispatch.vkGetInstanceProcAddr.?);
+        self.instance = Instance.init(instance, &self.vki);
     }
 
     fn populateDebugMessengerCreateInfo(create_info: *vk.DebugUtilsMessengerCreateInfoEXT) void {
@@ -409,26 +410,22 @@ const HelloTriangleApplication = struct {
         var create_info: vk.DebugUtilsMessengerCreateInfoEXT = undefined;
         populateDebugMessengerCreateInfo(&create_info);
 
-        self.debug_messenger = try self.vki.createDebugUtilsMessengerEXT(self.instance, &create_info, null);
+        self.debug_messenger = try self.instance.createDebugUtilsMessengerEXT(&create_info, null);
     }
 
     fn createSurface(self: *Self) !void {
-        if ((try glfw.createWindowSurface(self.instance, self.window.?, null, &self.surface)) != @enumToInt(vk.Result.success)) {
+        if (c.glfwCreateWindowSurface(self.instance.handle, self.window.?, null, &self.surface) != .success) {
             return error.SurfaceInitFailed;
         }
     }
 
     fn pickPhysicalDevice(self: *Self) !void {
-        var device_count: u32 = undefined;
-        _ = try self.vki.enumeratePhysicalDevices(self.instance, &device_count, null);
+        const devices = try self.instance.enumeratePhysicalDevicesAlloc(self.allocator);
+        defer self.allocator.free(devices);
 
-        if (device_count == 0) {
+        if (devices.len == 0) {
             return error.NoGPUsSupportVulkan;
         }
-
-        const devices = try self.allocator.alloc(vk.PhysicalDevice, device_count);
-        defer self.allocator.free(devices);
-        _ = try self.vki.enumeratePhysicalDevices(self.instance, &device_count, devices.ptr);
 
         for (devices) |device| {
             if (try self.isDeviceSuitable(device)) {
@@ -477,12 +474,13 @@ const HelloTriangleApplication = struct {
             create_info.pp_enabled_layer_names = &validation_layers;
         }
 
-        self.device = try self.vki.createDevice(self.physical_device, &create_info, null);
+        const device = try self.instance.createDevice(self.physical_device, &create_info, null);
 
-        self.vkd = try DeviceDispatch.load(self.device, self.vki.dispatch.vkGetDeviceProcAddr);
+        self.vkd = DeviceWrapper.load(device, self.instance.wrapper.dispatch.vkGetDeviceProcAddr.?);
+        self.device = Device.init(device, &self.vkd);
 
-        self.graphics_queue = self.vkd.getDeviceQueue(self.device, indices.graphics_family.?, 0);
-        self.present_queue = self.vkd.getDeviceQueue(self.device, indices.present_family.?, 0);
+        self.graphics_queue = self.device.getDeviceQueue(indices.graphics_family.?, 0);
+        self.present_queue = self.device.getDeviceQueue(indices.present_family.?, 0);
     }
 
     fn createSwapChain(self: *Self) !void {
@@ -495,7 +493,7 @@ const HelloTriangleApplication = struct {
 
         var image_count = swap_chain_support.capabilities.min_image_count + 1;
         if (swap_chain_support.capabilities.max_image_count > 0) {
-            image_count = std.math.min(image_count, swap_chain_support.capabilities.max_image_count);
+            image_count = @min(image_count, swap_chain_support.capabilities.max_image_count);
         }
 
         const indices = try self.findQueueFamilies(self.physical_device);
@@ -505,7 +503,7 @@ const HelloTriangleApplication = struct {
         else
             .exclusive;
 
-        self.swap_chain = try self.vkd.createSwapchainKHR(self.device, &.{
+        self.swap_chain = try self.device.createSwapchainKHR(&.{
             .flags = .{},
             .surface = self.surface,
             .min_image_count = image_count,
@@ -524,9 +522,7 @@ const HelloTriangleApplication = struct {
             .old_swapchain = .null_handle,
         }, null);
 
-        _ = try self.vkd.getSwapchainImagesKHR(self.device, self.swap_chain, &image_count, null);
-        self.swap_chain_images = try self.allocator.alloc(vk.Image, image_count);
-        _ = try self.vkd.getSwapchainImagesKHR(self.device, self.swap_chain, &image_count, self.swap_chain_images.?.ptr);
+        self.swap_chain_images = try self.device.getSwapchainImagesAllocKHR(self.swap_chain, self.allocator);
 
         self.swap_chain_image_format = surface_format.format;
         self.swap_chain_extent = extent;
@@ -535,8 +531,8 @@ const HelloTriangleApplication = struct {
     fn createImageViews(self: *Self) !void {
         self.swap_chain_image_views = try self.allocator.alloc(vk.ImageView, self.swap_chain_images.?.len);
 
-        for (self.swap_chain_images.?) |image, i| {
-            self.swap_chain_image_views.?[i] = try self.vkd.createImageView(self.device, &.{
+        for (self.swap_chain_images.?, 0..) |image, i| {
+            self.swap_chain_image_views.?[i] = try self.device.createImageView(&.{
                 .flags = .{},
                 .image = image,
                 .view_type = .@"2d",
@@ -745,10 +741,10 @@ const HelloTriangleApplication = struct {
     fn createFramebuffers(self: *Self) !void {
         self.swap_chain_framebuffers = try self.allocator.alloc(vk.Framebuffer, self.swap_chain_image_views.?.len);
 
-        for (self.swap_chain_framebuffers.?) |*framebuffer, i| {
+        for (self.swap_chain_framebuffers.?, 0..) |*framebuffer, i| {
             const attachments = [_]vk.ImageView{self.swap_chain_image_views.?[i]};
 
-            framebuffer.* = try self.vkd.createFramebuffer(self.device, &.{
+            framebuffer.* = try self.device.createFramebuffer(&.{
                 .flags = .{},
                 .render_pass = self.render_pass,
                 .attachment_count = attachments.len,
@@ -1023,11 +1019,13 @@ const HelloTriangleApplication = struct {
         if (capabilities.current_extent.width != 0xFFFF_FFFF) {
             return capabilities.current_extent;
         } else {
-            const window_size = try self.window.?.getFramebufferSize();
+            var window_width: u32 = undefined;
+            var window_height: u32 = undefined;
+            c.glfwGetFramebufferSize(self.window.?, @ptrCast(&window_width), @ptrCast(&window_height));
 
             return vk.Extent2D{
-                .width = std.math.clamp(window_size.width, capabilities.min_image_extent.width, capabilities.max_image_extent.width),
-                .height = std.math.clamp(window_size.height, capabilities.min_image_extent.height, capabilities.max_image_extent.height),
+                .width = std.math.clamp(window_width, capabilities.min_image_extent.width, capabilities.max_image_extent.width),
+                .height = std.math.clamp(window_height, capabilities.min_image_extent.height, capabilities.max_image_extent.height),
             };
         }
     }
@@ -1035,23 +1033,11 @@ const HelloTriangleApplication = struct {
     fn querySwapChainSupport(self: *Self, device: vk.PhysicalDevice) !SwapChainSupportDetails {
         var details = SwapChainSupportDetails.init(self.allocator);
 
-        details.capabilities = try self.vki.getPhysicalDeviceSurfaceCapabilitiesKHR(device, self.surface);
+        details.capabilities = try self.instance.getPhysicalDeviceSurfaceCapabilitiesKHR(device, self.surface);
 
-        var format_count: u32 = undefined;
-        _ = try self.vki.getPhysicalDeviceSurfaceFormatsKHR(device, self.surface, &format_count, null);
-
-        if (format_count != 0) {
-            details.formats = try details.allocator.alloc(vk.SurfaceFormatKHR, format_count);
-            _ = try self.vki.getPhysicalDeviceSurfaceFormatsKHR(device, self.surface, &format_count, details.formats.?.ptr);
-        }
-
-        var present_mode_count: u32 = undefined;
-        _ = try self.vki.getPhysicalDeviceSurfacePresentModesKHR(device, self.surface, &present_mode_count, null);
-
-        if (present_mode_count != 0) {
-            details.present_modes = try details.allocator.alloc(vk.PresentModeKHR, present_mode_count);
-            _ = try self.vki.getPhysicalDeviceSurfacePresentModesKHR(device, self.surface, &present_mode_count, details.present_modes.?.ptr);
-        }
+        details.formats = try self.instance.getPhysicalDeviceSurfaceFormatsAllocKHR(device, self.surface, details.allocator);
+        
+        details.present_modes = try self.instance.getPhysicalDeviceSurfacePresentModesAllocKHR(device, self.surface, details.allocator);
 
         return details;
     }
@@ -1073,12 +1059,8 @@ const HelloTriangleApplication = struct {
     }
 
     fn checkDeviceExtensionSupport(self: *Self, device: vk.PhysicalDevice) !bool {
-        var extension_count: u32 = undefined;
-        _ = try self.vki.enumerateDeviceExtensionProperties(device, null, &extension_count, null);
-
-        const available_extensions = try self.allocator.alloc(vk.ExtensionProperties, extension_count);
+        const available_extensions = try self.instance.enumerateDeviceExtensionPropertiesAlloc(device, null, self.allocator);
         defer self.allocator.free(available_extensions);
-        _ = try self.vki.enumerateDeviceExtensionProperties(device, null, &extension_count, available_extensions.ptr);
 
         const required_extensions = device_extensions[0..];
 
@@ -1100,18 +1082,14 @@ const HelloTriangleApplication = struct {
     fn findQueueFamilies(self: *Self, device: vk.PhysicalDevice) !QueueFamilyIndices {
         var indices: QueueFamilyIndices = .{};
 
-        var queue_family_count: u32 = 0;
-        self.vki.getPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, null);
-
-        const queue_families = try self.allocator.alloc(vk.QueueFamilyProperties, queue_family_count);
+        const queue_families = try self.instance.getPhysicalDeviceQueueFamilyPropertiesAlloc(device, self.allocator);
         defer self.allocator.free(queue_families);
-        self.vki.getPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.ptr);
 
-        for (queue_families) |queue_family, i| {
+        for (queue_families, 0..) |queue_family, i| {
             if (indices.graphics_family == null and queue_family.queue_flags.graphics_bit) {
-                indices.graphics_family = @intCast(u32, i);
-            } else if (indices.present_family == null and (try self.vki.getPhysicalDeviceSurfaceSupportKHR(device, @intCast(u32, i), self.surface)) == vk.TRUE) {
-                indices.present_family = @intCast(u32, i);
+                indices.graphics_family = @intCast(i);
+            } else if (indices.present_family == null and (try self.instance.getPhysicalDeviceSurfaceSupportKHR(device, @intCast(i), self.surface)) == vk.TRUE) {
+                indices.present_family = @intCast(i);
             }
 
             if (indices.isComplete()) {
@@ -1123,23 +1101,25 @@ const HelloTriangleApplication = struct {
     }
 
     fn getRequiredExtensions(allocator: Allocator) !std.ArrayListAligned([*:0]const u8, null) {
+        var glfw_exts_count: u32 = 0;
+        const glfw_exts = c.glfwGetRequiredInstanceExtensions(&glfw_exts_count);
+
         var extensions = std.ArrayList([*:0]const u8).init(allocator);
-        try extensions.appendSlice(try glfw.getRequiredInstanceExtensions());
+
+        for (0..glfw_exts_count) |idx| {
+            try extensions.append(glfw_exts[idx][0..]);
+        }
 
         if (enable_validation_layers) {
-            try extensions.append(vk.extension_info.ext_debug_utils.name);
+            try extensions.append(vk.extensions.ext_debug_utils.name);
         }
 
         return extensions;
     }
 
     fn checkValidationLayerSupport(self: *Self) !bool {
-        var layer_count: u32 = undefined;
-        _ = try self.vkb.enumerateInstanceLayerProperties(&layer_count, null);
-
-        var available_layers = try self.allocator.alloc(vk.LayerProperties, layer_count);
+        const available_layers = try self.vkb.enumerateInstanceLayerPropertiesAlloc(self.allocator);
         defer self.allocator.free(available_layers);
-        _ = try self.vkb.enumerateInstanceLayerProperties(&layer_count, available_layers.ptr);
 
         for (validation_layers) |layer_name| {
             var layer_found: bool = false;
@@ -1171,14 +1151,11 @@ const HelloTriangleApplication = struct {
 };
 
 pub fn main() void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const leaked = gpa.deinit();
-        if (leaked) std.log.err("MemLeak", .{});
-    }
-    const allocator = gpa.allocator();
+    var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa_impl.deinit();
+    const gpa = gpa_impl.allocator();
 
-    var app = HelloTriangleApplication.init(allocator);
+    var app = HelloTriangleApplication.init(gpa);
     defer app.deinit();
     app.run() catch |err| {
         std.log.err("application exited with error: {any}", .{err});

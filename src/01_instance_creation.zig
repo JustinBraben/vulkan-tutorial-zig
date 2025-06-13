@@ -1,28 +1,24 @@
 const std = @import("std");
-
-const glfw = @import("glfw");
 const vk = @import("vulkan");
+const c = @import("c");
+const Allocator = std.mem.Allocator;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
 
-const BaseDispatch = vk.BaseWrapper(.{
-    .createInstance = true,
-});
-
-const InstanceDispatch = vk.InstanceWrapper(.{
-    .destroyInstance = true,
-});
+const BaseWrapper = vk.BaseWrapper;
+const InstanceWrapper = vk.InstanceWrapper;
+const Instance = vk.InstanceProxy;
 
 const HelloTriangleApplication = struct {
     const Self = @This();
 
-    window: ?glfw.Window = null,
+    window: ?*c.GLFWwindow = null,
 
-    vkb: BaseDispatch = undefined,
-    vki: InstanceDispatch = undefined,
+    vkb: BaseWrapper = undefined,
+    vki: InstanceWrapper = undefined,
 
-    instance: vk.Instance = .null_handle,
+    instance: Instance = undefined,
 
     pub fn init() Self {
         return Self{};
@@ -35,11 +31,15 @@ const HelloTriangleApplication = struct {
     }
 
     fn initWindow(self: *Self) !void {
-        try glfw.init(.{});
-        self.window = try glfw.Window.create(WIDTH, HEIGHT, "Vulkan", null, null, .{
-            .client_api = .no_api,
-            .resizable = false,
-        });
+        if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
+        c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
+        self.window = c.glfwCreateWindow(
+        WIDTH,
+        HEIGHT,
+        "Vulkan",
+        null,
+        null,
+        ) orelse return error.WindowInitFailed;
     }
 
     fn initVulkan(self: *Self) !void {
@@ -47,45 +47,41 @@ const HelloTriangleApplication = struct {
     }
 
     fn mainLoop(self: *Self) !void {
-        while (!self.window.?.shouldClose()) {
-            try glfw.pollEvents();
+        while (c.glfwWindowShouldClose(self.window) == c.GLFW_FALSE) {
+            c.glfwPollEvents();
         }
     }
 
     pub fn deinit(self: *Self) void {
-        if (self.instance != .null_handle) self.vki.destroyInstance(self.instance, null);
+        self.instance.destroyInstance(null);
 
-        if (self.window != null) self.window.?.destroy();
+        c.glfwDestroyWindow(self.window);
 
-        glfw.terminate();
+        c.glfwTerminate();
     }
 
     fn createInstance(self: *Self) !void {
-        const vk_proc = @ptrCast(*const fn (instance: vk.Instance, procname: [*:0]const u8) callconv(.C) vk.PfnVoidFunction, &glfw.getInstanceProcAddress);
-        self.vkb = try BaseDispatch.load(vk_proc);
+        self.vkb = BaseWrapper.load(c.glfwGetInstanceProcAddress);
 
         const app_info = vk.ApplicationInfo{
             .p_application_name = "Hello Triangle",
-            .application_version = vk.makeApiVersion(1, 0, 0, 0),
+            .application_version = @bitCast(vk.makeApiVersion(1, 0, 0, 0)),
             .p_engine_name = "No Engine",
-            .engine_version = vk.makeApiVersion(1, 0, 0, 0),
-            .api_version = vk.API_VERSION_1_2,
+            .engine_version = @bitCast(vk.makeApiVersion(1, 0, 0, 0)),
+            .api_version = @bitCast(vk.API_VERSION_1_2),
         };
 
-        const glfw_extensions = try glfw.getRequiredInstanceExtensions();
+        var glfw_exts_count: u32 = 0;
+        const glfw_exts = c.glfwGetRequiredInstanceExtensions(&glfw_exts_count);
 
-        const create_info = vk.InstanceCreateInfo{
-            .flags = .{},
+        const instance = try self.vkb.createInstance(&.{
             .p_application_info = &app_info,
-            .enabled_layer_count = 0,
-            .pp_enabled_layer_names = undefined,
-            .enabled_extension_count = @intCast(u32, glfw_extensions.len),
-            .pp_enabled_extension_names = glfw_extensions.ptr,
-        };
+            .enabled_extension_count = glfw_exts_count,
+            .pp_enabled_extension_names = @ptrCast(glfw_exts),
+        }, null);
 
-        self.instance = try self.vkb.createInstance(&create_info, null);
-
-        self.vki = try InstanceDispatch.load(self.instance, vk_proc);
+        self.vki = InstanceWrapper.load(instance, self.vkb.dispatch.vkGetInstanceProcAddr.?);
+        self.instance = Instance.init(instance, &self.vki);
     }
 };
 
