@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const glfw = @import("glfw");
+const c = @import("c");
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -8,7 +8,7 @@ const HEIGHT: u32 = 600;
 const HelloTriangleApplication = struct {
     const Self = @This();
 
-    window: ?glfw.Window = null,
+    window: ?*c.GLFWwindow = null,
 
     pub fn init() Self {
         return Self{};
@@ -21,25 +21,29 @@ const HelloTriangleApplication = struct {
     }
 
     fn initWindow(self: *Self) !void {
-        try glfw.init(.{});
-        self.window = try glfw.Window.create(WIDTH, HEIGHT, "Vulkan", null, null, .{
-            .client_api = .no_api,
-            .resizable = false,
-        });
+        if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
+        c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
+        self.window = c.glfwCreateWindow(
+        WIDTH,
+        HEIGHT,
+        "Vulkan",
+        null,
+        null,
+        ) orelse return error.WindowInitFailed;
     }
 
     fn initVulkan(_: *Self) !void {}
 
     fn mainLoop(self: *Self) !void {
-        while (!self.window.?.shouldClose()) {
-            try glfw.pollEvents();
+        while (c.glfwWindowShouldClose(self.window) == c.GLFW_FALSE) {
+            c.glfwPollEvents();
         }
     }
 
     pub fn deinit(self: *Self) void {
-        if (self.window != null) self.window.?.destroy();
+        c.glfwDestroyWindow(self.window);
 
-        glfw.terminate();
+        c.glfwTerminate();
     }
 };
 

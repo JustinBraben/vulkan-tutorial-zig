@@ -1,0 +1,26 @@
+.{
+    .name = .vulkan_tutorial_zig,
+    .version = "0.1.0",
+    .fingerprint = 0x130789c417ced091, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.14.1",
+    .dependencies = .{
+        .vulkan_headers = .{
+            .url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/v1.3.268.tar.gz",
+            .hash = "N-V-__8AAPD3hQHi-TbuhSTYqSHfAhZh1z8zjZyPHxF2nh5C",
+        },
+        .vulkan_zig = .{
+            .url = "git+https://github.com/Snektron/vulkan-zig#9b4090c852760ce3210562f62ffaf301479c38ba",
+            .hash = "vulkan-0.0.0-r7Ytx2dUAwDhoUvuIqliqPUbyDZZi0bl_CQIwspUpHs_",
+        },
+        .glfw = .{
+            .url = "git+https://github.com/allyourcodebase/glfw.git#98607df9bce062c7fd837d58fafa06dae22edb04",
+            .hash = "glfw-0.0.0-R5AeUm0HGgA_Rlrr9HR91ejkGd-K_JyCjkXz_U3b-jp9",
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
