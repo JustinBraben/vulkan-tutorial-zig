@@ -1026,7 +1026,7 @@ const HelloTriangleApplication = struct {
             return error.UnsupportedLayoutTransition;
         }
 
-        self.vkd.cmdPipelineBarrier(command_buffer, source_stage, destination_stage, .{}, 0, undefined, 0, undefined, barrier.len, &barrier);
+        self.device.cmdPipelineBarrier(command_buffer, source_stage, destination_stage, .{}, 0, undefined, 0, undefined, barrier.len, &barrier);
 
         try self.endSingleTimeCommands(command_buffer);
     }

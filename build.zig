@@ -122,8 +122,8 @@ const lessons = [_][]const u8{
     "26_texture_mapping",
     "27_depth_buffering",
     "28_model_loading",
-    // "29_mipmapping",
-    // "30_multisampling",
+    "29_mipmapping",
+    "30_multisampling",
 };
 
 fn addShader(
