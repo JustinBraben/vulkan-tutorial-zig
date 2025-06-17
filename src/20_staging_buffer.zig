@@ -5,6 +5,9 @@ const c = @import("c");
 const Allocator = std.mem.Allocator;
 const resources = @import("resources");
 
+const vert_spv align(@alignOf(u32)) = resources.shaders.vert_18.*;
+const frag_spv align(@alignOf(u32)) = resources.shaders.frag_18.*;
+
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
 
@@ -19,81 +22,12 @@ const enable_validation_layers: bool = switch (builtin.mode) {
     else => false,
 };
 
-const BaseDispatch = vk.BaseWrapper(.{
-    .createInstance = true,
-    .enumerateInstanceLayerProperties = true,
-});
+const BaseWrapper = vk.BaseWrapper;
+const InstanceWrapper = vk.InstanceWrapper;
+const DeviceWrapper = vk.DeviceWrapper;
 
-const InstanceDispatch = vk.InstanceWrapper(.{
-    .createDebugUtilsMessengerEXT = enable_validation_layers,
-    .createDevice = true,
-    .destroyDebugUtilsMessengerEXT = enable_validation_layers,
-    .destroyInstance = true,
-    .destroySurfaceKHR = true,
-    .enumerateDeviceExtensionProperties = true,
-    .enumeratePhysicalDevices = true,
-    .getDeviceProcAddr = true,
-    .getPhysicalDeviceMemoryProperties = true,
-    .getPhysicalDeviceQueueFamilyProperties = true,
-    .getPhysicalDeviceSurfaceCapabilitiesKHR = true,
-    .getPhysicalDeviceSurfaceFormatsKHR = true,
-    .getPhysicalDeviceSurfacePresentModesKHR = true,
-    .getPhysicalDeviceSurfaceSupportKHR = true,
-});
-
-const DeviceDispatch = vk.DeviceWrapper(.{
-    .acquireNextImageKHR = true,
-    .allocateCommandBuffers = true,
-    .allocateMemory = true,
-    .beginCommandBuffer = true,
-    .bindBufferMemory = true,
-    .cmdBeginRenderPass = true,
-    .cmdBindPipeline = true,
-    .cmdBindVertexBuffers = true,
-    .cmdCopyBuffer = true,
-    .cmdDraw = true,
-    .cmdEndRenderPass = true,
-    .cmdSetViewport = true,
-    .cmdSetScissor = true,
-    .createBuffer = true,
-    .createCommandPool = true,
-    .createFence = true,
-    .createFramebuffer = true,
-    .createGraphicsPipelines = true,
-    .createImageView = true,
-    .createPipelineLayout = true,
-    .createRenderPass = true,
-    .createSemaphore = true,
-    .createShaderModule = true,
-    .createSwapchainKHR = true,
-    .destroyBuffer = true,
-    .destroyCommandPool = true,
-    .destroyDevice = true,
-    .destroyFence = true,
-    .destroyFramebuffer = true,
-    .destroyImageView = true,
-    .destroyPipeline = true,
-    .destroyPipelineLayout = true,
-    .destroyRenderPass = true,
-    .destroySemaphore = true,
-    .destroyShaderModule = true,
-    .destroySwapchainKHR = true,
-    .deviceWaitIdle = true,
-    .endCommandBuffer = true,
-    .freeCommandBuffers = true,
-    .freeMemory = true,
-    .getBufferMemoryRequirements = true,
-    .getDeviceQueue = true,
-    .getSwapchainImagesKHR = true,
-    .mapMemory = true,
-    .queuePresentKHR = true,
-    .queueSubmit = true,
-    .queueWaitIdle = true,
-    .resetCommandBuffer = true,
-    .resetFences = true,
-    .unmapMemory = true,
-    .waitForFences = true,
-});
+const Instance = vk.InstanceProxy;
+const Device = vk.DeviceProxy;
 
 const QueueFamilyIndices = struct {
     graphics_family: ?u32 = null,
@@ -212,19 +146,22 @@ const HelloTriangleApplication = struct {
     }
 
     fn initWindow(self: *Self) !void {
-        try glfw.init(.{});
-        self.window = try glfw.Window.create(WIDTH, HEIGHT, "Vulkan", null, null, .{
-            .client_api = .no_api,
-        });
-        self.window.?.setUserPointer(self);
-        self.window.?.setFramebufferSizeCallback(framebufferResizeCallback);
+        if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
+        c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
+        self.window = c.glfwCreateWindow(
+        WIDTH,
+        HEIGHT,
+        "Vulkan",
+        null,
+        null,
+        ) orelse return error.WindowInitFailed;
+        c.glfwSetWindowUserPointer(self.window, self);
+        _ = c.glfwSetFramebufferSizeCallback(self.window, framebufferResizeCallback);
     }
 
-    fn framebufferResizeCallback(window: glfw.Window, _: u32, _: u32) void {
-        var self = window.getUserPointer(Self);
-        if (self != null) {
-            self.?.framebuffer_resized = true;
-        }
+    fn framebufferResizeCallback(window: ?*c.GLFWwindow, _: c_int, _: c_int) callconv(.c) void {
+        var self: *Self = @ptrCast(@alignCast(c.glfwGetWindowUserPointer(window)));
+        self.framebuffer_resized = true;
     }
 
     fn initVulkan(self: *Self) !void {
@@ -245,38 +182,38 @@ const HelloTriangleApplication = struct {
     }
 
     fn mainLoop(self: *Self) !void {
-        while (!self.window.?.shouldClose()) {
-            try glfw.pollEvents();
+        while (c.glfwWindowShouldClose(self.window) == c.GLFW_FALSE) {
+            c.glfwPollEvents();
             try self.drawFrame();
         }
 
-        _ = try self.vkd.deviceWaitIdle(self.device);
+        _ = try self.device.deviceWaitIdle();
     }
 
     fn cleanupSwapChain(self: *Self) void {
-        if (self.swap_chain_framebuffers != null) {
-            for (self.swap_chain_framebuffers.?) |framebuffer| {
-                self.vkd.destroyFramebuffer(self.device, framebuffer, null);
+        if (self.swap_chain_framebuffers) |swap_chain_framebuffers| {
+            for (swap_chain_framebuffers) |framebuffer| {
+                self.device.destroyFramebuffer(framebuffer, null);
             }
-            self.allocator.free(self.swap_chain_framebuffers.?);
+            self.allocator.free(swap_chain_framebuffers);
             self.swap_chain_framebuffers = null;
         }
 
-        if (self.swap_chain_image_views != null) {
-            for (self.swap_chain_image_views.?) |image_view| {
-                self.vkd.destroyImageView(self.device, image_view, null);
+        if (self.swap_chain_image_views) |swap_chain_image_views| {
+            for (swap_chain_image_views) |image_view| {
+                self.device.destroyImageView(image_view, null);
             }
-            self.allocator.free(self.swap_chain_image_views.?);
+            self.allocator.free(swap_chain_image_views);
             self.swap_chain_image_views = null;
         }
 
-        if (self.swap_chain_images != null) {
-            self.allocator.free(self.swap_chain_images.?);
+        if (self.swap_chain_images) |swap_chain_images| {
+            self.allocator.free(swap_chain_images);
             self.swap_chain_images = null;
         }
 
         if (self.swap_chain != .null_handle) {
-            self.vkd.destroySwapchainKHR(self.device, self.swap_chain, null);
+            self.device.destroySwapchainKHR(self.swap_chain, null);
             self.swap_chain = .null_handle;
         }
     }
@@ -284,36 +221,36 @@ const HelloTriangleApplication = struct {
     pub fn deinit(self: *Self) void {
         self.cleanupSwapChain();
 
-        if (self.graphics_pipeline != .null_handle) self.vkd.destroyPipeline(self.device, self.graphics_pipeline, null);
-        if (self.pipeline_layout != .null_handle) self.vkd.destroyPipelineLayout(self.device, self.pipeline_layout, null);
-        if (self.render_pass != .null_handle) self.vkd.destroyRenderPass(self.device, self.render_pass, null);
+        if (self.graphics_pipeline != .null_handle) self.device.destroyPipeline(self.graphics_pipeline, null);
+        if (self.pipeline_layout != .null_handle) self.device.destroyPipelineLayout(self.pipeline_layout, null);
+        if (self.render_pass != .null_handle) self.device.destroyRenderPass(self.render_pass, null);
 
-        if (self.vertex_buffer != .null_handle) self.vkd.destroyBuffer(self.device, self.vertex_buffer, null);
-        if (self.vertex_buffer_memory != .null_handle) self.vkd.freeMemory(self.device, self.vertex_buffer_memory, null);
+        if (self.vertex_buffer != .null_handle) self.device.destroyBuffer(self.vertex_buffer, null);
+        if (self.vertex_buffer_memory != .null_handle) self.device.freeMemory(self.vertex_buffer_memory, null);
 
         if (self.render_finished_semaphores != null) {
             for (self.render_finished_semaphores.?) |semaphore| {
-                self.vkd.destroySemaphore(self.device, semaphore, null);
+                self.device.destroySemaphore(semaphore, null);
             }
             self.allocator.free(self.render_finished_semaphores.?);
         }
         if (self.image_available_semaphores != null) {
             for (self.image_available_semaphores.?) |semaphore| {
-                self.vkd.destroySemaphore(self.device, semaphore, null);
+                self.device.destroySemaphore(semaphore, null);
             }
             self.allocator.free(self.image_available_semaphores.?);
         }
         if (self.in_flight_fences != null) {
             for (self.in_flight_fences.?) |fence| {
-                self.vkd.destroyFence(self.device, fence, null);
+                self.device.destroyFence(fence, null);
             }
             self.allocator.free(self.in_flight_fences.?);
         }
 
-        if (self.command_pool != .null_handle) self.vkd.destroyCommandPool(self.device, self.command_pool, null);
+        if (self.command_pool != .null_handle) self.device.destroyCommandPool(self.command_pool, null);
         if (self.command_buffers != null) self.allocator.free(self.command_buffers.?);
 
-        if (self.device != .null_handle) self.vkd.destroyDevice(self.device, null);
+        if (self.device.handle != .null_handle) self.device.destroyDevice(null);
 
         if (enable_validation_layers and self.debug_messenger != .null_handle) {
             self.instance.destroyDebugUtilsMessengerEXT(self.debug_messenger, null);
@@ -328,14 +265,16 @@ const HelloTriangleApplication = struct {
     }
 
     fn recreateSwapChain(self: *Self) !void {
-        var size = try glfw.Window.getFramebufferSize(self.window.?);
+        var window_width: u32 = undefined;
+        var window_height: u32 = undefined;
+        c.glfwGetFramebufferSize(self.window.?, @ptrCast(&window_width), @ptrCast(&window_height));
 
-        while (size.width == 0 or size.height == 0) {
-            size = try glfw.Window.getFramebufferSize(self.window.?);
-            try glfw.waitEvents();
+        while (window_width == 0 or window_height == 0) {
+            c.glfwGetFramebufferSize(self.window.?, @ptrCast(&window_width), @ptrCast(&window_height));
+            c.glfwWaitEvents();
         }
 
-        try self.vkd.deviceWaitIdle(self.device);
+        try self.device.deviceWaitIdle();
 
         self.cleanupSwapChain();
 
@@ -590,7 +529,7 @@ const HelloTriangleApplication = struct {
             .dependency_flags = .{},
         }};
 
-        self.render_pass = try self.vkd.createRenderPass(self.device, &.{
+        self.render_pass = try self.device.createRenderPass(&.{
             .flags = .{},
             .attachment_count = color_attachment.len,
             .p_attachments = &color_attachment,
@@ -602,10 +541,16 @@ const HelloTriangleApplication = struct {
     }
 
     fn createGraphicsPipeline(self: *Self) !void {
-        const vert_shader_module: vk.ShaderModule = try self.createShaderModule(resources.vert_18);
-        defer self.vkd.destroyShaderModule(self.device, vert_shader_module, null);
-        const frag_shader_module: vk.ShaderModule = try self.createShaderModule(resources.frag_18);
-        defer self.vkd.destroyShaderModule(self.device, frag_shader_module, null);
+        const vert_shader_module: vk.ShaderModule = try self.device.createShaderModule(&.{
+            .code_size = vert_spv.len,
+            .p_code = @ptrCast(&vert_spv),
+        }, null);
+        defer self.device.destroyShaderModule(vert_shader_module, null);
+        const frag_shader_module: vk.ShaderModule = try self.device.createShaderModule(&.{
+            .code_size = frag_spv.len,
+            .p_code = @ptrCast(&frag_spv),
+        }, null);
+        defer self.device.destroyShaderModule(frag_shader_module, null);
 
         const shader_stages = [_]vk.PipelineShaderStageCreateInfo{
             .{
@@ -630,7 +575,7 @@ const HelloTriangleApplication = struct {
         const vertex_input_info = vk.PipelineVertexInputStateCreateInfo{
             .flags = .{},
             .vertex_binding_description_count = 1,
-            .p_vertex_binding_descriptions = @ptrCast([*]const vk.VertexInputBindingDescription, &binding_description),
+            .p_vertex_binding_descriptions = @ptrCast(&binding_description),
             .vertex_attribute_description_count = attribute_descriptions.len,
             .p_vertex_attribute_descriptions = &attribute_descriptions,
         };
@@ -700,7 +645,7 @@ const HelloTriangleApplication = struct {
             .p_dynamic_states = &dynamic_states,
         };
 
-        self.pipeline_layout = try self.vkd.createPipelineLayout(self.device, &.{
+        self.pipeline_layout = try self.device.createPipelineLayout(&.{
             .flags = .{},
             .set_layout_count = 0,
             .p_set_layouts = undefined,
@@ -728,13 +673,12 @@ const HelloTriangleApplication = struct {
             .base_pipeline_index = -1,
         }};
 
-        _ = try self.vkd.createGraphicsPipelines(
-            self.device,
+        _ = try self.device.createGraphicsPipelines(
             .null_handle,
             pipeline_info.len,
             &pipeline_info,
             null,
-            @ptrCast([*]vk.Pipeline, &self.graphics_pipeline),
+            @ptrCast(&self.graphics_pipeline),
         );
     }
 
@@ -759,7 +703,7 @@ const HelloTriangleApplication = struct {
     fn createCommandPool(self: *Self) !void {
         const queue_family_indices = try self.findQueueFamilies(self.physical_device);
 
-        self.command_pool = try self.vkd.createCommandPool(self.device, &.{
+        self.command_pool = try self.device.createCommandPool(&.{
             .flags = .{ .reset_command_buffer_bit = true },
             .queue_family_index = queue_family_indices.graphics_family.?,
         }, null);
@@ -772,20 +716,20 @@ const HelloTriangleApplication = struct {
         var staging_buffer_memory: vk.DeviceMemory = undefined;
         try createBuffer(self, buffer_size, .{ .transfer_src_bit = true }, .{ .host_visible_bit = true, .host_coherent_bit = true }, &staging_buffer, &staging_buffer_memory);
 
-        const data = try self.vkd.mapMemory(self.device, staging_buffer_memory, 0, buffer_size, .{});
-        std.mem.copy(u8, @ptrCast([*]u8, data.?)[0..buffer_size], std.mem.sliceAsBytes(&vertices));
-        self.vkd.unmapMemory(self.device, staging_buffer_memory);
+        const data = try self.device.mapMemory(staging_buffer_memory, 0, buffer_size, .{});
+        std.mem.copyForwards(u8, @as([*]u8, @ptrCast(data.?))[0..buffer_size], std.mem.sliceAsBytes(&vertices));
+        self.device.unmapMemory(staging_buffer_memory);
 
         try createBuffer(self, buffer_size, .{ .transfer_dst_bit = true, .vertex_buffer_bit = true }, .{ .device_local_bit = true }, &self.vertex_buffer, &self.vertex_buffer_memory);
 
         try copyBuffer(self, staging_buffer, self.vertex_buffer, buffer_size);
 
-        self.vkd.destroyBuffer(self.device, staging_buffer, null);
-        self.vkd.freeMemory(self.device, staging_buffer_memory, null);
+        self.device.destroyBuffer(staging_buffer, null);
+        self.device.freeMemory(staging_buffer_memory, null);
     }
 
     fn createBuffer(self: *Self, size: vk.DeviceSize, usage: vk.BufferUsageFlags, properties: vk.MemoryPropertyFlags, buffer: *vk.Buffer, buffer_memory: *vk.DeviceMemory) !void {
-        buffer.* = try self.vkd.createBuffer(self.device, &.{
+        buffer.* = try self.device.createBuffer(&.{
             .flags = .{},
             .size = size,
             .usage = usage,
@@ -794,13 +738,13 @@ const HelloTriangleApplication = struct {
             .p_queue_family_indices = undefined,
         }, null);
 
-        const mem_requirements = self.vkd.getBufferMemoryRequirements(self.device, buffer.*);
+        const mem_requirements = self.device.getBufferMemoryRequirements(buffer.*);
 
-        buffer_memory.* = try self.vkd.allocateMemory(self.device, &.{
+        buffer_memory.* = try self.device.allocateMemory(&.{
             .allocation_size = mem_requirements.size,
             .memory_type_index = try self.findMemoryType(mem_requirements.memory_type_bits, properties),
         }, null);
-        try self.vkd.bindBufferMemory(self.device, buffer.*, buffer_memory.*, 0);
+        try self.device.bindBufferMemory(buffer.*, buffer_memory.*, 0);
     }
 
     fn copyBuffer(self: *Self, src_buffer: vk.Buffer, dst_buffer: vk.Buffer, size: vk.DeviceSize) !void {
@@ -811,44 +755,44 @@ const HelloTriangleApplication = struct {
         };
 
         var command_buffer: vk.CommandBuffer = undefined;
-        try self.vkd.allocateCommandBuffers(self.device, &alloc_info, @ptrCast([*]vk.CommandBuffer, &command_buffer));
+        try self.device.allocateCommandBuffers(&alloc_info, @ptrCast(&command_buffer));
 
         const begin_info = vk.CommandBufferBeginInfo{
             .flags = .{ .one_time_submit_bit = true },
             .p_inheritance_info = null,
         };
 
-        try self.vkd.beginCommandBuffer(command_buffer, &begin_info);
+        try self.device.beginCommandBuffer(command_buffer, &begin_info);
 
         const copy_region = [_]vk.BufferCopy{.{
             .src_offset = 0,
             .dst_offset = 0,
             .size = size,
         }};
-        self.vkd.cmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+        self.device.cmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
 
-        try self.vkd.endCommandBuffer(command_buffer);
+        try self.device.endCommandBuffer(command_buffer);
 
         const submit_infos = [_]vk.SubmitInfo{.{
             .wait_semaphore_count = 0,
             .p_wait_semaphores = undefined,
             .p_wait_dst_stage_mask = undefined,
             .command_buffer_count = 1,
-            .p_command_buffers = @ptrCast([*]const vk.CommandBuffer, &command_buffer),
+            .p_command_buffers = @ptrCast(&command_buffer),
             .signal_semaphore_count = 0,
             .p_signal_semaphores = undefined,
         }};
-        try self.vkd.queueSubmit(self.graphics_queue, submit_infos.len, &submit_infos, .null_handle);
-        try self.vkd.queueWaitIdle(self.graphics_queue);
+        try self.device.queueSubmit(self.graphics_queue, submit_infos.len, &submit_infos, .null_handle);
+        try self.device.queueWaitIdle(self.graphics_queue);
 
-        self.vkd.freeCommandBuffers(self.device, self.command_pool, 1, @ptrCast([*]const vk.CommandBuffer, &command_buffer));
+        self.device.freeCommandBuffers(self.command_pool, 1, @ptrCast(&command_buffer));
     }
 
     fn findMemoryType(self: *Self, type_filter: u32, properties: vk.MemoryPropertyFlags) !u32 {
         const mem_properties = self.vki.getPhysicalDeviceMemoryProperties(self.physical_device);
-        for (mem_properties.memory_types[0..mem_properties.memory_type_count]) |mem_type, i| {
-            if (type_filter & (@as(u32, 1) << @truncate(u5, i)) != 0 and mem_type.property_flags.contains(properties)) {
-                return @truncate(u32, i);
+        for (mem_properties.memory_types[0..mem_properties.memory_type_count], 0..) |mem_type, i| {
+            if (type_filter & (@as(u32, 1) << @truncate(i)) != 0 and mem_type.property_flags.contains(properties)) {
+                return @truncate(i);
             }
         }
 
@@ -858,15 +802,15 @@ const HelloTriangleApplication = struct {
     fn createCommandBuffers(self: *Self) !void {
         self.command_buffers = try self.allocator.alloc(vk.CommandBuffer, MAX_FRAMES_IN_FLIGHT);
 
-        try self.vkd.allocateCommandBuffers(self.device, &.{
+        try self.device.allocateCommandBuffers(&.{
             .command_pool = self.command_pool,
             .level = .primary,
-            .command_buffer_count = @intCast(u32, self.command_buffers.?.len),
+            .command_buffer_count = @intCast(self.command_buffers.?.len),
         }, self.command_buffers.?.ptr);
     }
 
     fn recordCommandBuffer(self: *Self, command_buffer: vk.CommandBuffer, image_index: u32) !void {
-        try self.vkd.beginCommandBuffer(command_buffer, &.{
+        try self.device.beginCommandBuffer(command_buffer, &.{
             .flags = .{},
             .p_inheritance_info = null,
         });
@@ -886,35 +830,35 @@ const HelloTriangleApplication = struct {
             .p_clear_values = &clear_values,
         };
 
-        self.vkd.cmdBeginRenderPass(command_buffer, &render_pass_info, .@"inline");
+        self.device.cmdBeginRenderPass(command_buffer, &render_pass_info, .@"inline");
         {
-            self.vkd.cmdBindPipeline(command_buffer, .graphics, self.graphics_pipeline);
+            self.device.cmdBindPipeline(command_buffer, .graphics, self.graphics_pipeline);
 
             const viewports = [_]vk.Viewport{.{
                 .x = 0,
                 .y = 0,
-                .width = @intToFloat(f32, self.swap_chain_extent.width),
-                .height = @intToFloat(f32, self.swap_chain_extent.height),
+                .width = @as(f32, @floatFromInt(self.swap_chain_extent.width)),
+                .height = @as(f32, @floatFromInt(self.swap_chain_extent.height)),
                 .min_depth = 0,
                 .max_depth = 1,
             }};
-            self.vkd.cmdSetViewport(command_buffer, 0, viewports.len, &viewports);
+            self.device.cmdSetViewport(command_buffer, 0, viewports.len, &viewports);
 
             const scissors = [_]vk.Rect2D{.{
                 .offset = .{ .x = 0, .y = 0 },
                 .extent = self.swap_chain_extent,
             }};
-            self.vkd.cmdSetScissor(command_buffer, 0, scissors.len, &scissors);
+            self.device.cmdSetScissor(command_buffer, 0, scissors.len, &scissors);
 
             const vertex_buffers = [_]vk.Buffer{self.vertex_buffer};
             const offsets = [_]vk.DeviceSize{0};
-            self.vkd.cmdBindVertexBuffers(command_buffer, 0, 1, &vertex_buffers, &offsets);
+            self.device.cmdBindVertexBuffers(command_buffer, 0, 1, &vertex_buffers, &offsets);
 
-            self.vkd.cmdDraw(command_buffer, vertices.len, 1, 0, 0);
+            self.device.cmdDraw(command_buffer, vertices.len, 1, 0, 0);
         }
-        self.vkd.cmdEndRenderPass(command_buffer);
+        self.device.cmdEndRenderPass(command_buffer);
 
-        try self.vkd.endCommandBuffer(command_buffer);
+        try self.device.endCommandBuffer(command_buffer);
     }
 
     fn createSyncObjects(self: *Self) !void {
@@ -924,16 +868,16 @@ const HelloTriangleApplication = struct {
 
         var i: usize = 0;
         while (i < MAX_FRAMES_IN_FLIGHT) : (i += 1) {
-            self.image_available_semaphores.?[i] = try self.vkd.createSemaphore(self.device, &.{ .flags = .{} }, null);
-            self.render_finished_semaphores.?[i] = try self.vkd.createSemaphore(self.device, &.{ .flags = .{} }, null);
-            self.in_flight_fences.?[i] = try self.vkd.createFence(self.device, &.{ .flags = .{ .signaled_bit = true } }, null);
+            self.image_available_semaphores.?[i] = try self.device.createSemaphore(&.{ .flags = .{} }, null);
+            self.render_finished_semaphores.?[i] = try self.device.createSemaphore(&.{ .flags = .{} }, null);
+            self.in_flight_fences.?[i] = try self.device.createFence(&.{ .flags = .{ .signaled_bit = true } }, null);
         }
     }
 
     fn drawFrame(self: *Self) !void {
-        _ = try self.vkd.waitForFences(self.device, 1, @ptrCast([*]const vk.Fence, &self.in_flight_fences.?[self.current_frame]), vk.TRUE, std.math.maxInt(u64));
+        _ = try self.device.waitForFences(1, @ptrCast(&self.in_flight_fences.?[self.current_frame]), vk.TRUE, std.math.maxInt(u64));
 
-        const result = self.vkd.acquireNextImageKHR(self.device, self.swap_chain, std.math.maxInt(u64), self.image_available_semaphores.?[self.current_frame], .null_handle) catch |err| switch (err) {
+        const result = self.device.acquireNextImageKHR(self.swap_chain, std.math.maxInt(u64), self.image_available_semaphores.?[self.current_frame], .null_handle) catch |err| switch (err) {
             error.OutOfDateKHR => {
                 try self.recreateSwapChain();
                 return;
@@ -945,9 +889,9 @@ const HelloTriangleApplication = struct {
             return error.ImageAcquireFailed;
         }
 
-        try self.vkd.resetFences(self.device, 1, @ptrCast([*]const vk.Fence, &self.in_flight_fences.?[self.current_frame]));
+        try self.device.resetFences(1, @ptrCast(&self.in_flight_fences.?[self.current_frame]));
 
-        try self.vkd.resetCommandBuffer(self.command_buffers.?[self.current_frame], .{});
+        try self.device.resetCommandBuffer(self.command_buffers.?[self.current_frame], .{});
         try self.recordCommandBuffer(self.command_buffers.?[self.current_frame], result.image_index);
 
         const wait_semaphores = [_]vk.Semaphore{self.image_available_semaphores.?[self.current_frame]};
@@ -959,18 +903,18 @@ const HelloTriangleApplication = struct {
             .p_wait_semaphores = &wait_semaphores,
             .p_wait_dst_stage_mask = &wait_stages,
             .command_buffer_count = 1,
-            .p_command_buffers = @ptrCast([*]const vk.CommandBuffer, &self.command_buffers.?[self.current_frame]),
+            .p_command_buffers = @ptrCast(&self.command_buffers.?[self.current_frame]),
             .signal_semaphore_count = signal_semaphores.len,
             .p_signal_semaphores = &signal_semaphores,
         };
-        _ = try self.vkd.queueSubmit(self.graphics_queue, 1, &[_]vk.SubmitInfo{submit_info}, self.in_flight_fences.?[self.current_frame]);
+        _ = try self.device.queueSubmit(self.graphics_queue, 1, &[_]vk.SubmitInfo{submit_info}, self.in_flight_fences.?[self.current_frame]);
 
-        const present_result = self.vkd.queuePresentKHR(self.present_queue, &.{
+        const present_result = self.device.queuePresentKHR(self.present_queue, &.{
             .wait_semaphore_count = signal_semaphores.len,
-            .p_wait_semaphores = @ptrCast([*]const vk.Semaphore, &signal_semaphores),
+            .p_wait_semaphores = @ptrCast(&signal_semaphores),
             .swapchain_count = 1,
-            .p_swapchains = @ptrCast([*]const vk.SwapchainKHR, &self.swap_chain),
-            .p_image_indices = @ptrCast([*]const u32, &result.image_index),
+            .p_swapchains = @ptrCast(&self.swap_chain),
+            .p_image_indices = @ptrCast(&result.image_index),
             .p_results = null,
         }) catch |err| switch (err) {
             error.OutOfDateKHR => vk.Result.error_out_of_date_khr,
@@ -988,10 +932,10 @@ const HelloTriangleApplication = struct {
     }
 
     fn createShaderModule(self: *Self, code: []const u8) !vk.ShaderModule {
-        return try self.vkd.createShaderModule(self.device, &.{
+        return try self.vkd.createShaderModule(&.{
             .flags = .{},
             .code_size = code.len,
-            .p_code = @ptrCast([*]const u32, code),
+            .p_code = @ptrCast(code),
         }, null);
     }
 

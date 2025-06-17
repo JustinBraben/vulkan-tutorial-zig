@@ -5,8 +5,8 @@ const c = @import("c");
 const Allocator = std.mem.Allocator;
 const resources = @import("resources");
 
-const vert_spv align(@alignOf(u32)) = @embedFile("vert_09").*;
-const frag_spv align(@alignOf(u32)) = @embedFile("frag_09").*;
+const vert_spv align(@alignOf(u32)) = resources.shaders.vert_09.*;
+const frag_spv align(@alignOf(u32)) = resources.shaders.frag_09.*;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;

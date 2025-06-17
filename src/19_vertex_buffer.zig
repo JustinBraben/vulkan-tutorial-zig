@@ -5,8 +5,8 @@ const c = @import("c");
 const Allocator = std.mem.Allocator;
 const resources = @import("resources");
 
-const vert_spv align(@alignOf(u32)) = @embedFile("vert_18").*;
-const frag_spv align(@alignOf(u32)) = @embedFile("frag_18").*;
+const vert_spv align(@alignOf(u32)) = resources.shaders.vert_18.*;
+const frag_spv align(@alignOf(u32)) = resources.shaders.frag_18.*;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -784,8 +784,8 @@ const HelloTriangleApplication = struct {
             const viewports = [_]vk.Viewport{.{
                 .x = 0,
                 .y = 0,
-                .width = @floatFromInt(self.swap_chain_extent.width),
-                .height = @floatFromInt(self.swap_chain_extent.height),
+                .width = @as(f32, @floatFromInt(self.swap_chain_extent.width)),
+                .height = @as(f32, @floatFromInt(self.swap_chain_extent.height)),
                 .min_depth = 0,
                 .max_depth = 1,
             }};
@@ -876,14 +876,6 @@ const HelloTriangleApplication = struct {
         }
 
         self.current_frame = (self.current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-    }
-
-    fn createShaderModule(self: *Self, code: []const u8) !vk.ShaderModule {
-        return try self.vkd.createShaderModule(self.device, &.{
-            .flags = .{},
-            .code_size = code.len,
-            .p_code = @ptrCast(code),
-        }, null);
     }
 
     fn chooseSwapSurfaceFormat(available_formats: []vk.SurfaceFormatKHR) vk.SurfaceFormatKHR {

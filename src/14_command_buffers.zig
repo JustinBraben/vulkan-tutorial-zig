@@ -5,8 +5,8 @@ const c = @import("c");
 const Allocator = std.mem.Allocator;
 const resources = @import("resources");
 
-const vert_spv align(@alignOf(u32)) = @embedFile("vert_09").*;
-const frag_spv align(@alignOf(u32)) = @embedFile("frag_09").*;
+const vert_spv align(@alignOf(u32)) = resources.shaders.vert_09.*;
+const frag_spv align(@alignOf(u32)) = resources.shaders.frag_09.*;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -588,7 +588,7 @@ const HelloTriangleApplication = struct {
     }
 
     fn recordCommandBuffer(self: *Self, command_buffer: vk.CommandBuffer, image_index: u32) !void {
-        try self.vkd.beginCommandBuffer(command_buffer, &.{
+        try self.device.beginCommandBuffer(command_buffer, &.{
             .flags = .{},
             .p_inheritance_info = null,
         });
@@ -608,31 +608,31 @@ const HelloTriangleApplication = struct {
             .p_clear_values = &clear_values,
         };
 
-        self.vkd.cmdBeginRenderPass(command_buffer, &render_pass_info, .@"inline");
+        self.device.cmdBeginRenderPass(command_buffer, &render_pass_info, .@"inline");
         {
-            self.vkd.cmdBindPipeline(command_buffer, .graphics, self.graphics_pipeline);
+            self.device.cmdBindPipeline(command_buffer, .graphics, self.graphics_pipeline);
 
             const viewports = [_]vk.Viewport{.{
                 .x = 0,
                 .y = 0,
-                .width = @floatFromInt(self.swap_chain_extent.width),
-                .height = @floatFromInt(self.swap_chain_extent.height),
+                .width = @as(f32, @floatFromInt(self.swap_chain_extent.width)),
+                .height = @as(f32, @floatFromInt(self.swap_chain_extent.height)),
                 .min_depth = 0,
                 .max_depth = 1,
             }};
-            self.vkd.cmdSetViewport(command_buffer, 0, viewports.len, &viewports);
+            self.device.cmdSetViewport(command_buffer, 0, viewports.len, &viewports);
 
             const scissors = [_]vk.Rect2D{.{
                 .offset = .{ .x = 0, .y = 0 },
                 .extent = self.swap_chain_extent,
             }};
-            self.vkd.cmdSetScissor(command_buffer, 0, scissors.len, &scissors);
+            self.device.cmdSetScissor(command_buffer, 0, scissors.len, &scissors);
 
             self.vkd.cmdDraw(command_buffer, 3, 1, 0, 0);
         }
-        self.vkd.cmdEndRenderPass(command_buffer);
+        self.device.cmdEndRenderPass(command_buffer);
 
-        try self.vkd.endCommandBuffer(command_buffer);
+        try self.device.endCommandBuffer(command_buffer);
     }
 
     fn chooseSwapSurfaceFormat(available_formats: []vk.SurfaceFormatKHR) vk.SurfaceFormatKHR {

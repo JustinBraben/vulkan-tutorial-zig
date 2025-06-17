@@ -1,6 +1,9 @@
+const std = @import("std");
 const c = @cImport({
     @cDefine("GLFW_INCLUDE_NONE", {});
     @cInclude("GLFW/glfw3.h");
+    @cDefine("STB_IMAGE_IMPLEMENTATION", {});
+    @cInclude("stb/stb_image.h");
 });
 
 const vk = @import("vulkan");
@@ -34,3 +37,8 @@ pub const glfwWaitEvents = c.glfwWaitEvents;
 pub extern fn glfwGetInstanceProcAddress(instance: vk.Instance, procname: [*:0]const u8) vk.PfnVoidFunction;
 pub extern fn glfwGetPhysicalDevicePresentationSupport(instance: vk.Instance, pdev: vk.PhysicalDevice, queuefamily: u32) c_int;
 pub extern fn glfwCreateWindowSurface(instance: vk.Instance, window: *GLFWwindow, allocation_callbacks: ?*const vk.AllocationCallbacks, surface: *vk.SurfaceKHR) vk.Result;
+
+// Re-export the STBI things that we need
+pub const STBI_rgb_alpha = c.STBI_rgb_alpha;
+pub const stbi_load = c.stbi_load;
+pub const stbi_image_free = c.stbi_image_free;

@@ -16,6 +16,10 @@
             .url = "git+https://github.com/allyourcodebase/glfw.git#98607df9bce062c7fd837d58fafa06dae22edb04",
             .hash = "glfw-0.0.0-R5AeUm0HGgA_Rlrr9HR91ejkGd-K_JyCjkXz_U3b-jp9",
         },
+        .zalgebra = .{
+            .url = "git+https://github.com/kooparse/zalgebra.git#412c3e1cddcf6b8494a6c008dd152c6e0ec5e846",
+            .hash = "zalgebra-0.0.0-aaiVSk5nAQA4CIV_flm1iIpWiSrVcxggA9y_aaa-TtdR",
+        },
     },
 
     .paths = .{

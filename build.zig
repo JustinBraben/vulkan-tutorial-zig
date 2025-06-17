@@ -20,14 +20,38 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("libs/c.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
     c_module.addImport("vulkan", vulkan_zig.module("vulkan-zig"));
+    c_module.addIncludePath(b.path("libs"));
+    c_module.addCSourceFile(.{
+        .file = b.path("libs/stb/stb_image.c"),
+        .flags = &.{"-std=c99", "-g"},
+    });
 
     const glfw = b.dependency("glfw", .{
         .target = target,
         .optimize = optimize,
     });
     c_module.linkLibrary(glfw.artifact("glfw"));
+
+    const zalgebra = b.dependency("zalgebra", .{});
+
+    const resources_module = b.createModule(.{
+        .root_source_file = b.path("src/resources.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    addShader(b, resources_module, "vert_09", "src/09_shader_base.vert");
+    addShader(b, resources_module, "frag_09", "src/09_shader_base.frag");
+    addShader(b, resources_module, "vert_18", "src/18_shader_vertexbuffer.vert");
+    addShader(b, resources_module, "frag_18", "src/18_shader_vertexbuffer.frag");
+    addShader(b, resources_module, "vert_22", "src/22_shader_ubo.vert");
+    addShader(b, resources_module, "frag_22", "src/22_shader_ubo.frag");
+    addShader(b, resources_module, "vert_26", "src/26_shader_textures.vert");
+    addShader(b, resources_module, "frag_26", "src/26_shader_textures.frag");
+    addShader(b, resources_module, "vert_27", "src/27_shader_depth.vert");
+    addShader(b, resources_module, "frag_27", "src/27_shader_depth.frag");
 
     const lessons_step = b.step("lessons", "Build all lessons");
     for (lessons) |lesson_name| {
@@ -37,24 +61,15 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         });
 
-        addShader(b, lesson_exe_mod, "vert_09", "src/09_shader_base.vert");
-        addShader(b, lesson_exe_mod, "frag_09", "src/09_shader_base.frag");
-        addShader(b, lesson_exe_mod, "vert_18", "src/18_shader_vertexbuffer.vert");
-        addShader(b, lesson_exe_mod, "frag_18", "src/18_shader_vertexbuffer.frag");
-        addShader(b, lesson_exe_mod, "vert_22", "src/22_shader_ubo.vert");
-        addShader(b, lesson_exe_mod, "frag_22", "src/22_shader_ubo.frag");
-        addShader(b, lesson_exe_mod, "vert_26", "src/26_shader_textures.vert");
-        addShader(b, lesson_exe_mod, "frag_26", "src/26_shader_textures.frag");
-        addShader(b, lesson_exe_mod, "vert_27", "src/27_shader_depth.vert");
-        addShader(b, lesson_exe_mod, "frag_27", "src/27_shader_depth.frag");
+        lesson_exe_mod.addImport("vulkan", vulkan_zig.module("vulkan-zig"));
+        lesson_exe_mod.addImport("c", c_module);
+        lesson_exe_mod.addImport("zalgebra", zalgebra.module("zalgebra"));
+        lesson_exe_mod.addImport("resources", resources_module);
 
         const lesson_exe = b.addExecutable(.{
             .name = lesson_name,
             .root_module = lesson_exe_mod,
         });
-
-        lesson_exe_mod.addImport("vulkan", vulkan_zig.module("vulkan-zig"));
-        lesson_exe_mod.addImport("c", c_module);
 
         const compile_step = b.step(lesson_name, b.fmt("Build {s}", .{lesson_name}));
         compile_step.dependOn(&b.addInstallArtifact(lesson_exe, .{}).step);
@@ -95,12 +110,12 @@ const lessons = [_][]const u8{
     "17_swap_chain_recreation",
     "18_vertex_input",
     "19_vertex_buffer",
-    // "20_staging_buffer",
-    // "21_index_buffer",
-    // "22_descriptor_layout",
-    // "23_descriptor_sets",
-    // "24_texture_image",
-    // "25_sampler",
+    "20_staging_buffer",
+    "21_index_buffer",
+    "22_descriptor_layout",
+    "23_descriptor_sets",
+    "24_texture_image",
+    "25_sampler",
     // "26_texture_mapping",
     // "27_depth_buffering",
     // "28_model_loading",
