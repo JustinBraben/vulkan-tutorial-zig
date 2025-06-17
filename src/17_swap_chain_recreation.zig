@@ -155,6 +155,7 @@ const HelloTriangleApplication = struct {
                 self.device.destroyFramebuffer(framebuffer, null);
             }
             self.allocator.free(swap_chain_framebuffers);
+            self.swap_chain_framebuffers = null;
         }
 
         if (self.swap_chain_image_views) |swap_chain_image_views| {
@@ -162,14 +163,17 @@ const HelloTriangleApplication = struct {
                 self.device.destroyImageView(image_view, null);
             }
             self.allocator.free(swap_chain_image_views);
+            self.swap_chain_image_views = null;
         }
 
         if (self.swap_chain_images) |swap_chain_images| {
             self.allocator.free(swap_chain_images);
+            self.swap_chain_images = null;
         }
 
         if (self.swap_chain != .null_handle) {
             self.device.destroySwapchainKHR(self.swap_chain, null);
+            self.swap_chain = .null_handle;
         }
     }
 
@@ -200,7 +204,7 @@ const HelloTriangleApplication = struct {
             self.allocator.free(in_flight_fences);
         }
 
-        self.device.destroyCommandPool(self.command_pool, null);
+        if (self.command_pool != .null_handle) self.device.destroyCommandPool(self.command_pool, null);
         if (self.command_buffers) |command_buffers| self.allocator.free(command_buffers);
 
         self.device.destroyDevice(null);
