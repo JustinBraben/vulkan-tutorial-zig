@@ -53,6 +53,8 @@ pub fn build(b: *std.Build) void {
     addShader(b, resources_module, "vert_27", "src/27_shader_depth.vert");
     addShader(b, resources_module, "frag_27", "src/27_shader_depth.frag");
 
+    const obj_mod = b.dependency("obj", .{ .target = target, .optimize = optimize }).module("obj");
+
     const lessons_step = b.step("lessons", "Build all lessons");
     for (lessons) |lesson_name| {
         const lesson_exe_mod = b.createModule(.{
@@ -65,6 +67,7 @@ pub fn build(b: *std.Build) void {
         lesson_exe_mod.addImport("c", c_module);
         lesson_exe_mod.addImport("zalgebra", zalgebra.module("zalgebra"));
         lesson_exe_mod.addImport("resources", resources_module);
+        lesson_exe_mod.addImport("obj", obj_mod);
 
         const lesson_exe = b.addExecutable(.{
             .name = lesson_name,
@@ -118,7 +121,7 @@ const lessons = [_][]const u8{
     "25_sampler",
     "26_texture_mapping",
     "27_depth_buffering",
-    // "28_model_loading",
+    "28_model_loading",
     // "29_mipmapping",
     // "30_multisampling",
 };

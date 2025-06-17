@@ -1,15 +1,17 @@
 const std = @import("std");
+const math = std.math;
 const builtin = @import("builtin");
 const vk = @import("vulkan");
 const c = @import("c");
 const Allocator = std.mem.Allocator;
 const za = @import("zalgebra");
-const wobj = @import("wavefront-obj");
+const Vec3 = za.Vec3;
+const Mat4 = za.Mat4;
+const obj = @import("obj");
 const resources = @import("resources");
 
-const c = @cImport({
-    @cInclude("stb_image.h");
-});
+const vert_spv align(@alignOf(u32)) = resources.shaders.vert_27.*;
+const frag_spv align(@alignOf(u32)) = resources.shaders.frag_27.*;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -28,100 +30,12 @@ const enable_validation_layers: bool = switch (builtin.mode) {
     else => false,
 };
 
-const BaseDispatch = vk.BaseWrapper(.{
-    .createInstance = true,
-    .enumerateInstanceLayerProperties = true,
-});
+const BaseWrapper = vk.BaseWrapper;
+const InstanceWrapper = vk.InstanceWrapper;
+const DeviceWrapper = vk.DeviceWrapper;
 
-const InstanceDispatch = vk.InstanceWrapper(.{
-    .createDebugUtilsMessengerEXT = enable_validation_layers,
-    .createDevice = true,
-    .destroyDebugUtilsMessengerEXT = enable_validation_layers,
-    .destroyInstance = true,
-    .destroySurfaceKHR = true,
-    .enumerateDeviceExtensionProperties = true,
-    .enumeratePhysicalDevices = true,
-    .getDeviceProcAddr = true,
-    .getPhysicalDeviceFeatures = true,
-    .getPhysicalDeviceFormatProperties = true,
-    .getPhysicalDeviceMemoryProperties = true,
-    .getPhysicalDeviceProperties = true,
-    .getPhysicalDeviceQueueFamilyProperties = true,
-    .getPhysicalDeviceSurfaceCapabilitiesKHR = true,
-    .getPhysicalDeviceSurfaceFormatsKHR = true,
-    .getPhysicalDeviceSurfacePresentModesKHR = true,
-    .getPhysicalDeviceSurfaceSupportKHR = true,
-});
-
-const DeviceDispatch = vk.DeviceWrapper(.{
-    .acquireNextImageKHR = true,
-    .allocateCommandBuffers = true,
-    .allocateDescriptorSets = true,
-    .allocateMemory = true,
-    .beginCommandBuffer = true,
-    .bindBufferMemory = true,
-    .bindImageMemory = true,
-    .cmdBeginRenderPass = true,
-    .cmdBindDescriptorSets = true,
-    .cmdBindIndexBuffer = true,
-    .cmdBindPipeline = true,
-    .cmdBindVertexBuffers = true,
-    .cmdCopyBuffer = true,
-    .cmdCopyBufferToImage = true,
-    .cmdDrawIndexed = true,
-    .cmdEndRenderPass = true,
-    .cmdPipelineBarrier = true,
-    .cmdSetViewport = true,
-    .cmdSetScissor = true,
-    .createBuffer = true,
-    .createCommandPool = true,
-    .createDescriptorPool = true,
-    .createDescriptorSetLayout = true,
-    .createFence = true,
-    .createFramebuffer = true,
-    .createGraphicsPipelines = true,
-    .createImage = true,
-    .createImageView = true,
-    .createPipelineLayout = true,
-    .createRenderPass = true,
-    .createSampler = true,
-    .createSemaphore = true,
-    .createShaderModule = true,
-    .createSwapchainKHR = true,
-    .destroyBuffer = true,
-    .destroyCommandPool = true,
-    .destroyDescriptorPool = true,
-    .destroyDescriptorSetLayout = true,
-    .destroyDevice = true,
-    .destroyFence = true,
-    .destroyFramebuffer = true,
-    .destroyImage = true,
-    .destroyImageView = true,
-    .destroyPipeline = true,
-    .destroyPipelineLayout = true,
-    .destroyRenderPass = true,
-    .destroySampler = true,
-    .destroySemaphore = true,
-    .destroyShaderModule = true,
-    .destroySwapchainKHR = true,
-    .deviceWaitIdle = true,
-    .endCommandBuffer = true,
-    .freeCommandBuffers = true,
-    .freeMemory = true,
-    .getBufferMemoryRequirements = true,
-    .getDeviceQueue = true,
-    .getImageMemoryRequirements = true,
-    .getSwapchainImagesKHR = true,
-    .mapMemory = true,
-    .queuePresentKHR = true,
-    .queueSubmit = true,
-    .queueWaitIdle = true,
-    .resetCommandBuffer = true,
-    .resetFences = true,
-    .unmapMemory = true,
-    .updateDescriptorSets = true,
-    .waitForFences = true,
-});
+const Instance = vk.InstanceProxy;
+const Device = vk.DeviceProxy;
 
 const QueueFamilyIndices = struct {
     graphics_family: ?u32 = null,
@@ -189,14 +103,14 @@ pub const Vertex = struct {
             _ = self;
 
             var hasher = std.hash.Wyhash.init(0);
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.pos[0]));
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.pos[1]));
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.pos[2]));
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.color[0]));
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.color[1]));
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.color[2]));
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.tex_coord[0]));
-            std.hash.autoHash(&hasher, @floatToInt(u32, a.tex_coord[1]));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.pos[0])));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.pos[1])));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.pos[2])));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.color[0])));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.color[1])));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.color[2])));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.tex_coord[0])));
+            std.hash.autoHash(&hasher, @as(u32,@intFromFloat(a.tex_coord[1])));
             return hasher.final();
         }
 
@@ -772,10 +686,16 @@ const HelloTriangleApplication = struct {
     }
 
     fn createGraphicsPipeline(self: *Self) !void {
-        const vert_shader_module: vk.ShaderModule = try self.createShaderModule(resources.vert_27);
-        defer self.vkd.destroyShaderModule(self.device, vert_shader_module, null);
-        const frag_shader_module: vk.ShaderModule = try self.createShaderModule(resources.frag_27);
-        defer self.vkd.destroyShaderModule(self.device, frag_shader_module, null);
+        const vert_shader_module: vk.ShaderModule = try self.device.createShaderModule(&.{
+            .code_size = vert_spv.len,
+            .p_code = @ptrCast(&vert_spv),
+        }, null);
+        defer self.device.destroyShaderModule(vert_shader_module, null);
+        const frag_shader_module: vk.ShaderModule = try self.device.createShaderModule(&.{
+            .code_size = frag_spv.len,
+            .p_code = @ptrCast(&frag_spv),
+        }, null);
+        defer self.device.destroyShaderModule(frag_shader_module, null);
 
         const shader_stages = [_]vk.PipelineShaderStageCreateInfo{
             .{
@@ -1154,25 +1074,34 @@ const HelloTriangleApplication = struct {
     }
 
     fn loadModel(self: *Self) !void {
-        var model = try wobj.loadFile(self.allocator, MODEL_PATH);
-        defer model.deinit();
+        var model = try obj.parseObj(self.allocator, @embedFile(MODEL_PATH));
+        defer model.deinit(self.allocator);
 
         var unique_vertices = std.HashMap(Vertex, u32, Vertex.HashContext, std.hash_map.default_max_load_percentage).init(self.allocator);
         defer unique_vertices.deinit();
 
-        for (model.faces) |face| {
-            for (face.vertices) |vertex| {
-                const new_vertex = Vertex{
+        // Using this now
+        for (model.meshes) |mesh| {
+            for (mesh.indices) |index| {
+                // Vertices are stored as [x1, y1, z1, x2, y2, z2, ...]
+                // So vertex index N corresponds to positions [N*3, N*3+1, N*3+2]
+                const vertex_idx = index.vertex.? * 3;
+                
+                // Texture coordinates are stored as [u1, v1, u2, v2, ...]
+                // So tex_coord index N corresponds to positions [N*2, N*2+1]
+                const tex_coord_idx = if (index.tex_coord) |tc| tc * 2 else 0;
+
+                const new_vertex: Vertex = .{
                     .pos = .{
-                        model.positions[vertex.position].x,
-                        model.positions[vertex.position].y,
-                        model.positions[vertex.position].z,
+                        model.vertices[vertex_idx],
+                        model.vertices[vertex_idx + 1],
+                        model.vertices[vertex_idx + 2],
                     },
                     .color = .{ 1.0, 1.0, 1.0 },
-                    .tex_coord = .{
-                        model.textureCoordinates[vertex.textureCoordinate.?].x,
-                        1.0 - model.textureCoordinates[vertex.textureCoordinate.?].y,
-                    },
+                    .tex_coord = if (index.tex_coord) |_| .{
+                        model.tex_coords[tex_coord_idx],
+                        1.0 - model.tex_coords[tex_coord_idx + 1], // Flip Y coordinate for Vulkan
+                    } else .{ 0.0, 0.0 },
                 };
 
                 if (unique_vertices.get(new_vertex) == null) {
@@ -1193,7 +1122,7 @@ const HelloTriangleApplication = struct {
         try createBuffer(self, buffer_size, .{ .transfer_src_bit = true }, .{ .host_visible_bit = true, .host_coherent_bit = true }, &staging_buffer, &staging_buffer_memory);
 
         const data = try self.device.mapMemory(staging_buffer_memory, 0, buffer_size, .{});
-        std.mem.copy(u8, @ptrCast([*]u8, data.?)[0..buffer_size], std.mem.sliceAsBytes(self.vertices.items));
+        std.mem.copyForwards(u8, @as([*]u8, @ptrCast(data.?))[0..buffer_size], std.mem.sliceAsBytes(self.vertices.items));
         self.device.unmapMemory(staging_buffer_memory);
 
         try createBuffer(self, buffer_size, .{ .transfer_dst_bit = true, .vertex_buffer_bit = true }, .{ .device_local_bit = true }, &self.vertex_buffer, &self.vertex_buffer_memory);
@@ -1212,7 +1141,7 @@ const HelloTriangleApplication = struct {
         try createBuffer(self, buffer_size, .{ .transfer_src_bit = true }, .{ .host_visible_bit = true, .host_coherent_bit = true }, &staging_buffer, &staging_buffer_memory);
 
         const data = try self.device.mapMemory(staging_buffer_memory, 0, buffer_size, .{});
-        std.mem.copy(u8, @ptrCast([*]u8, data.?)[0..buffer_size], std.mem.sliceAsBytes(self.indices.items));
+        std.mem.copyForwards(u8, @as([*]u8, @ptrCast(data.?))[0..buffer_size], std.mem.sliceAsBytes(self.indices.items));
         self.device.unmapMemory(staging_buffer_memory);
 
         try createBuffer(self, buffer_size, .{ .transfer_dst_bit = true, .index_buffer_bit = true }, .{ .device_local_bit = true }, &self.index_buffer, &self.index_buffer_memory);
