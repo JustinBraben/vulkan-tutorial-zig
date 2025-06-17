@@ -9,8 +9,8 @@ const Vec3 = za.Vec3;
 const Mat4 = za.Mat4;
 const resources = @import("resources");
 
-const vert_spv align(@alignOf(u32)) = resources.shaders.vert_22.*;
-const frag_spv align(@alignOf(u32)) = resources.shaders.frag_22.*;
+const vert_spv align(@alignOf(u32)) = resources.shaders.vert_26.*;
+const frag_spv align(@alignOf(u32)) = resources.shaders.frag_26.*;
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -26,99 +26,12 @@ const enable_validation_layers: bool = switch (builtin.mode) {
     else => false,
 };
 
-const BaseDispatch = vk.BaseWrapper(.{
-    .createInstance = true,
-    .enumerateInstanceLayerProperties = true,
-});
+const BaseWrapper = vk.BaseWrapper;
+const InstanceWrapper = vk.InstanceWrapper;
+const DeviceWrapper = vk.DeviceWrapper;
 
-const InstanceDispatch = vk.InstanceWrapper(.{
-    .createDebugUtilsMessengerEXT = enable_validation_layers,
-    .createDevice = true,
-    .destroyDebugUtilsMessengerEXT = enable_validation_layers,
-    .destroyInstance = true,
-    .destroySurfaceKHR = true,
-    .enumerateDeviceExtensionProperties = true,
-    .enumeratePhysicalDevices = true,
-    .getDeviceProcAddr = true,
-    .getPhysicalDeviceFeatures = true,
-    .getPhysicalDeviceMemoryProperties = true,
-    .getPhysicalDeviceProperties = true,
-    .getPhysicalDeviceQueueFamilyProperties = true,
-    .getPhysicalDeviceSurfaceCapabilitiesKHR = true,
-    .getPhysicalDeviceSurfaceFormatsKHR = true,
-    .getPhysicalDeviceSurfacePresentModesKHR = true,
-    .getPhysicalDeviceSurfaceSupportKHR = true,
-});
-
-const DeviceDispatch = vk.DeviceWrapper(.{
-    .acquireNextImageKHR = true,
-    .allocateCommandBuffers = true,
-    .allocateDescriptorSets = true,
-    .allocateMemory = true,
-    .beginCommandBuffer = true,
-    .bindBufferMemory = true,
-    .bindImageMemory = true,
-    .cmdBeginRenderPass = true,
-    .cmdBindDescriptorSets = true,
-    .cmdBindIndexBuffer = true,
-    .cmdBindPipeline = true,
-    .cmdBindVertexBuffers = true,
-    .cmdCopyBuffer = true,
-    .cmdCopyBufferToImage = true,
-    .cmdDrawIndexed = true,
-    .cmdEndRenderPass = true,
-    .cmdPipelineBarrier = true,
-    .cmdSetViewport = true,
-    .cmdSetScissor = true,
-    .createBuffer = true,
-    .createCommandPool = true,
-    .createDescriptorPool = true,
-    .createDescriptorSetLayout = true,
-    .createFence = true,
-    .createFramebuffer = true,
-    .createGraphicsPipelines = true,
-    .createImage = true,
-    .createImageView = true,
-    .createPipelineLayout = true,
-    .createRenderPass = true,
-    .createSampler = true,
-    .createSemaphore = true,
-    .createShaderModule = true,
-    .createSwapchainKHR = true,
-    .destroyBuffer = true,
-    .destroyCommandPool = true,
-    .destroyDescriptorPool = true,
-    .destroyDescriptorSetLayout = true,
-    .destroyDevice = true,
-    .destroyFence = true,
-    .destroyFramebuffer = true,
-    .destroyImage = true,
-    .destroyImageView = true,
-    .destroyPipeline = true,
-    .destroyPipelineLayout = true,
-    .destroyRenderPass = true,
-    .destroySampler = true,
-    .destroySemaphore = true,
-    .destroyShaderModule = true,
-    .destroySwapchainKHR = true,
-    .deviceWaitIdle = true,
-    .endCommandBuffer = true,
-    .freeCommandBuffers = true,
-    .freeMemory = true,
-    .getBufferMemoryRequirements = true,
-    .getDeviceQueue = true,
-    .getImageMemoryRequirements = true,
-    .getSwapchainImagesKHR = true,
-    .mapMemory = true,
-    .queuePresentKHR = true,
-    .queueSubmit = true,
-    .queueWaitIdle = true,
-    .resetCommandBuffer = true,
-    .resetFences = true,
-    .unmapMemory = true,
-    .updateDescriptorSets = true,
-    .waitForFences = true,
-});
+const Instance = vk.InstanceProxy;
+const Device = vk.DeviceProxy;
 
 const QueueFamilyIndices = struct {
     graphics_family: ?u32 = null,
@@ -717,10 +630,16 @@ const HelloTriangleApplication = struct {
     }
 
     fn createGraphicsPipeline(self: *Self) !void {
-        const vert_shader_module: vk.ShaderModule = try self.createShaderModule(resources.vert_26);
-        defer self.vkd.destroyShaderModule(self.device, vert_shader_module, null);
-        const frag_shader_module: vk.ShaderModule = try self.createShaderModule(resources.frag_26);
-        defer self.vkd.destroyShaderModule(self.device, frag_shader_module, null);
+        const vert_shader_module: vk.ShaderModule = try self.device.createShaderModule(&.{
+            .code_size = vert_spv.len,
+            .p_code = @ptrCast(&vert_spv),
+        }, null);
+        defer self.device.destroyShaderModule(vert_shader_module, null);
+        const frag_shader_module: vk.ShaderModule = try self.device.createShaderModule(&.{
+            .code_size = frag_spv.len,
+            .p_code = @ptrCast(&frag_spv),
+        }, null);
+        defer self.device.destroyShaderModule(frag_shader_module, null);
 
         const shader_stages = [_]vk.PipelineShaderStageCreateInfo{
             .{

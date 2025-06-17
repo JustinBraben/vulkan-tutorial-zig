@@ -358,29 +358,29 @@ const HelloTriangleApplication = struct {
         if (self.depth_image != .null_handle) self.device.destroyImage(self.depth_image, null);
         if (self.depth_image_memory != .null_handle) self.device.freeMemory(self.depth_image_memory, null);
 
-        if (self.swap_chain_framebuffers != null) {
-            for (self.swap_chain_framebuffers.?) |framebuffer| {
-                self.vkd.destroyFramebuffer(self.device, framebuffer, null);
+        if (self.swap_chain_framebuffers) |swap_chain_framebuffers| {
+            for (swap_chain_framebuffers) |framebuffer| {
+                self.device.destroyFramebuffer(framebuffer, null);
             }
-            self.allocator.free(self.swap_chain_framebuffers.?);
+            self.allocator.free(swap_chain_framebuffers);
             self.swap_chain_framebuffers = null;
         }
 
-        if (self.swap_chain_image_views != null) {
-            for (self.swap_chain_image_views.?) |image_view| {
+        if (self.swap_chain_image_views) |swap_chain_image_views| {
+            for (swap_chain_image_views) |image_view| {
                 self.device.destroyImageView(image_view, null);
             }
-            self.allocator.free(self.swap_chain_image_views.?);
+            self.allocator.free(swap_chain_image_views);
             self.swap_chain_image_views = null;
         }
 
-        if (self.swap_chain_images != null) {
-            self.allocator.free(self.swap_chain_images.?);
+        if (self.swap_chain_images) |swap_chain_images| {
+            self.allocator.free(swap_chain_images);
             self.swap_chain_images = null;
         }
 
         if (self.swap_chain != .null_handle) {
-            self.vkd.destroySwapchainKHR(self.device, self.swap_chain, null);
+            self.device.destroySwapchainKHR(self.swap_chain, null);
             self.swap_chain = .null_handle;
         }
     }
@@ -461,14 +461,16 @@ const HelloTriangleApplication = struct {
     }
 
     fn recreateSwapChain(self: *Self) !void {
-        var size = try glfw.Window.getFramebufferSize(self.window.?);
+        var window_width: u32 = undefined;
+        var window_height: u32 = undefined;
+        c.glfwGetFramebufferSize(self.window.?, @ptrCast(&window_width), @ptrCast(&window_height));
 
-        while (size.width == 0 or size.height == 0) {
-            size = try glfw.Window.getFramebufferSize(self.window.?);
-            try glfw.waitEvents();
+        while (window_width == 0 or window_height == 0) {
+            c.glfwGetFramebufferSize(self.window.?, @ptrCast(&window_width), @ptrCast(&window_height));
+            c.glfwWaitEvents();
         }
 
-        try self.vkd.deviceWaitIdle(self.device);
+        try self.device.deviceWaitIdle();
 
         self.cleanupSwapChain();
 
@@ -923,10 +925,10 @@ const HelloTriangleApplication = struct {
     fn createFramebuffers(self: *Self) !void {
         self.swap_chain_framebuffers = try self.allocator.alloc(vk.Framebuffer, self.swap_chain_image_views.?.len);
 
-        for (self.swap_chain_framebuffers.?) |*framebuffer, i| {
+        for (self.swap_chain_framebuffers.?, 0..) |*framebuffer, i| {
             const attachments = [_]vk.ImageView{ self.swap_chain_image_views.?[i], self.depth_image_view };
 
-            framebuffer.* = try self.vkd.createFramebuffer(self.device, &.{
+            framebuffer.* = try self.device.createFramebuffer(&.{
                 .flags = .{},
                 .render_pass = self.render_pass,
                 .attachment_count = attachments.len,
