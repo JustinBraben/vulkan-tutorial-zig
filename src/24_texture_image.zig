@@ -1,6 +1,7 @@
 const std = @import("std");
 const math = std.math;
 const builtin = @import("builtin");
+const is_macos = builtin.os.tag == .macos;
 const vk = @import("vulkan");
 const c = @import("c");
 const Allocator = std.mem.Allocator;
@@ -8,6 +9,11 @@ const za = @import("zalgebra");
 const Vec3 = za.Vec3;
 const Mat4 = za.Mat4;
 const resources = @import("resources");
+
+const macos_extension_names = [_][*:0]const u8{
+    vk.extensions.khr_portability_enumeration.name,
+    vk.extensions.khr_get_physical_device_properties_2.name,
+};
 
 const vert_spv align(@alignOf(u32)) = resources.shaders.vert_22.*;
 const frag_spv align(@alignOf(u32)) = resources.shaders.frag_22.*;
@@ -20,6 +26,7 @@ const MAX_FRAMES_IN_FLIGHT: u32 = 2;
 const validation_layers = [_][*:0]const u8{"VK_LAYER_KHRONOS_validation"};
 
 const device_extensions = [_][*:0]const u8{vk.extensions.khr_swapchain.name};
+const macos_device_extensions = [_][*:0]const u8{vk.extensions.khr_portability_subset.name};
 
 const enable_validation_layers: bool = switch (builtin.mode) {
     .Debug, .ReleaseSafe => true,
@@ -359,7 +366,7 @@ const HelloTriangleApplication = struct {
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags= .{},
+            .flags = .{ .enumerate_portability_bit_khr = true },
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
@@ -454,14 +461,19 @@ const HelloTriangleApplication = struct {
             },
         };
 
+        var device_extension_names = std.ArrayList([*:0]const u8).init(self.allocator);
+        defer device_extension_names.deinit();
+        try device_extension_names.appendSlice(device_extensions[0..]);
+        if (is_macos) try device_extension_names.appendSlice(macos_device_extensions[0..]);
+
         var create_info = vk.DeviceCreateInfo{
             .flags = .{},
             .queue_create_info_count = queue_create_info.len,
             .p_queue_create_infos = &queue_create_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
-            .enabled_extension_count = device_extensions.len,
-            .pp_enabled_extension_names = &device_extensions,
+            .enabled_extension_count = @intCast(device_extension_names.items.len),
+            .pp_enabled_extension_names = device_extension_names.items.ptr,
             .p_enabled_features = null,
         };
 
@@ -1350,20 +1362,20 @@ const HelloTriangleApplication = struct {
     }
 
     fn getRequiredExtensions(allocator: Allocator) !std.ArrayListAligned([*:0]const u8, null) {
+        var extension_names = std.ArrayList([*:0]const u8).init(allocator);
+        // these extensions are to support vulkan in mac os
+        // glfw will get get them by default https://github.com/glfw/glfw/issues/2335
+        if (is_macos) try extension_names.appendSlice(macos_extension_names[0..]);
+
         var glfw_exts_count: u32 = 0;
         const glfw_exts = c.glfwGetRequiredInstanceExtensions(&glfw_exts_count);
-
-        var extensions = std.ArrayList([*:0]const u8).init(allocator);
-
-        for (0..glfw_exts_count) |idx| {
-            try extensions.append(glfw_exts[idx][0..]);
-        }
+        try extension_names.appendSlice(@ptrCast(glfw_exts[0..glfw_exts_count]));
 
         if (enable_validation_layers) {
-            try extensions.append(vk.extensions.ext_debug_utils.name);
+            try extension_names.append(vk.extensions.ext_debug_utils.name);
         }
 
-        return extensions;
+        return extension_names;
     }
 
     fn checkValidationLayerSupport(self: *Self) !bool {

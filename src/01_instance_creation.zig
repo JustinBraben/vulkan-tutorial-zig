@@ -10,6 +10,8 @@ const macos_extension_names = [_][*:0]const u8{
     vk.extensions.khr_get_physical_device_properties_2.name,
 };
 
+const macos_device_extensions = [_][*:0]const u8{vk.extensions.khr_portability_subset.name};
+
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
 

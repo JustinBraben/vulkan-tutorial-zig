@@ -1,8 +1,14 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const is_macos = builtin.os.tag == .macos;
 const vk = @import("vulkan");
 const c = @import("c");
 const Allocator = std.mem.Allocator;
+
+const macos_extension_names = [_][*:0]const u8{
+    vk.extensions.khr_portability_enumeration.name,
+    vk.extensions.khr_get_physical_device_properties_2.name,
+};
 const resources = @import("resources");
 
 const vert_spv align(@alignOf(u32)) = resources.shaders.vert_18.*;
@@ -16,6 +22,7 @@ const MAX_FRAMES_IN_FLIGHT: u32 = 2;
 const validation_layers = [_][*:0]const u8{"VK_LAYER_KHRONOS_validation"};
 
 const device_extensions = [_][*:0]const u8{vk.extensions.khr_swapchain.name};
+const macos_device_extensions = [_][*:0]const u8{vk.extensions.khr_portability_subset.name};
 
 const enable_validation_layers: bool = switch (builtin.mode) {
     .Debug, .ReleaseSafe => true,
@@ -295,7 +302,7 @@ const HelloTriangleApplication = struct {
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags= .{},
+            .flags = .{ .enumerate_portability_bit_khr = true },
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
@@ -390,14 +397,19 @@ const HelloTriangleApplication = struct {
             },
         };
 
+        var device_extension_names = std.ArrayList([*:0]const u8).init(self.allocator);
+        defer device_extension_names.deinit();
+        try device_extension_names.appendSlice(device_extensions[0..]);
+        if (is_macos) try device_extension_names.appendSlice(macos_device_extensions[0..]);
+
         var create_info = vk.DeviceCreateInfo{
             .flags = .{},
             .queue_create_info_count = queue_create_info.len,
             .p_queue_create_infos = &queue_create_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
-            .enabled_extension_count = device_extensions.len,
-            .pp_enabled_extension_names = &device_extensions,
+            .enabled_extension_count = @intCast(device_extension_names.items.len),
+            .pp_enabled_extension_names = device_extension_names.items.ptr,
             .p_enabled_features = null,
         };
 
@@ -669,13 +681,15 @@ const HelloTriangleApplication = struct {
             .base_pipeline_index = -1,
         }};
 
-        _ = try self.device.createGraphicsPipelines(
-            .null_handle,
-            pipeline_info.len,
-            &pipeline_info,
-            null,
-            @ptrCast(&self.graphics_pipeline),
-        );
+        // Can't create graphics pipeline until the next lesson
+        // _ = try self.device.createGraphicsPipelines(
+        //     .null_handle,
+        //     pipeline_info.len,
+        //     &pipeline_info,
+        //     null,
+        //     @ptrCast(&self.graphics_pipeline),
+        // );
+        std.log.debug("temp hold for compiler errors: {any} {any} {any} {any} {any} {any} {any} {any} {any}", .{ pipeline_info, dynamic_state, color_blending, multisampling, rasterizer, viewport_state, vertex_input_info, shader_stages, input_assembly });
     }
 
     fn createFramebuffers(self: *Self) !void {
@@ -739,25 +753,26 @@ const HelloTriangleApplication = struct {
 
         self.device.cmdBeginRenderPass(command_buffer, &render_pass_info, .@"inline");
         {
-            self.device.cmdBindPipeline(command_buffer, .graphics, self.graphics_pipeline);
+            // Cannot bind pipeline until the next lesson
+            // self.device.cmdBindPipeline(command_buffer, .graphics, self.graphics_pipeline);
 
-            const viewports = [_]vk.Viewport{.{
-                .x = 0,
-                .y = 0,
-                .width = @as(f32, @floatFromInt(self.swap_chain_extent.width)),
-                .height = @as(f32, @floatFromInt(self.swap_chain_extent.height)),
-                .min_depth = 0,
-                .max_depth = 1,
-            }};
-            self.device.cmdSetViewport(command_buffer, 0, viewports.len, &viewports);
+            // const viewports = [_]vk.Viewport{.{
+            //     .x = 0,
+            //     .y = 0,
+            //     .width = @as(f32, @floatFromInt(self.swap_chain_extent.width)),
+            //     .height = @as(f32, @floatFromInt(self.swap_chain_extent.height)),
+            //     .min_depth = 0,
+            //     .max_depth = 1,
+            // }};
+            // self.device.cmdSetViewport(command_buffer, 0, viewports.len, &viewports);
 
-            const scissors = [_]vk.Rect2D{.{
-                .offset = .{ .x = 0, .y = 0 },
-                .extent = self.swap_chain_extent,
-            }};
-            self.device.cmdSetScissor(command_buffer, 0, scissors.len, &scissors);
+            // const scissors = [_]vk.Rect2D{.{
+            //     .offset = .{ .x = 0, .y = 0 },
+            //     .extent = self.swap_chain_extent,
+            // }};
+            // self.device.cmdSetScissor(command_buffer, 0, scissors.len, &scissors);
 
-            self.device.cmdDraw(command_buffer, 3, 1, 0, 0);
+            // self.device.cmdDraw(command_buffer, 3, 1, 0, 0);
         }
         self.device.cmdEndRenderPass(command_buffer);
 
@@ -940,20 +955,20 @@ const HelloTriangleApplication = struct {
     }
 
     fn getRequiredExtensions(allocator: Allocator) !std.ArrayListAligned([*:0]const u8, null) {
+        var extension_names = std.ArrayList([*:0]const u8).init(allocator);
+        // these extensions are to support vulkan in mac os
+        // glfw will get get them by default https://github.com/glfw/glfw/issues/2335
+        if (is_macos) try extension_names.appendSlice(macos_extension_names[0..]);
+
         var glfw_exts_count: u32 = 0;
         const glfw_exts = c.glfwGetRequiredInstanceExtensions(&glfw_exts_count);
-
-        var extensions = std.ArrayList([*:0]const u8).init(allocator);
-
-        for (0..glfw_exts_count) |idx| {
-            try extensions.append(glfw_exts[idx][0..]);
-        }
+        try extension_names.appendSlice(@ptrCast(glfw_exts[0..glfw_exts_count]));
 
         if (enable_validation_layers) {
-            try extensions.append(vk.extensions.ext_debug_utils.name);
+            try extension_names.append(vk.extensions.ext_debug_utils.name);
         }
 
-        return extensions;
+        return extension_names;
     }
 
     fn checkValidationLayerSupport(self: *Self) !bool {

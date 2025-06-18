@@ -83,14 +83,14 @@ pub fn build(b: *std.Build) void {
             .root_module = lesson_exe_mod,
         });
 
-        const compile_step = b.step(lesson_name, b.fmt("Build {s}", .{lesson_name}));
+        const compile_step = b.step(lesson_name[0..2], b.fmt("Build {s}", .{lesson_name}));
         compile_step.dependOn(&b.addInstallArtifact(lesson_exe, .{}).step);
         b.getInstallStep().dependOn(compile_step);
 
         const run_cmd = b.addRunArtifact(lesson_exe);
         run_cmd.step.dependOn(compile_step);
 
-        const run_step = b.step(b.fmt("run-{s}", .{lesson_name}), b.fmt("Run {s}", .{lesson_name}));
+        const run_step = b.step(b.fmt("run-{s}", .{lesson_name[0..2]}), b.fmt("Run {s}", .{lesson_name}));
         run_step.dependOn(&run_cmd.step);
     }
 
