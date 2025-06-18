@@ -5,6 +5,7 @@ const vkgen = @import("vulkan_zig");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const t = target.result.os.tag;
 
     const vulkan_headers = b.dependency("vulkan_headers", .{
         .target = target,
@@ -26,14 +27,22 @@ pub fn build(b: *std.Build) void {
     c_module.addIncludePath(b.path("libs"));
     c_module.addCSourceFile(.{
         .file = b.path("libs/stb/stb_image.c"),
-        .flags = &.{"-std=c99", "-g"},
+        .flags = &.{ "-std=c99", "-g" },
     });
 
-    const glfw = b.dependency("glfw", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    c_module.linkLibrary(glfw.artifact("glfw"));
+    switch (t) {
+        .macos => {
+            c_module.linkSystemLibrary("vulkan", .{});
+            c_module.linkSystemLibrary("glfw", .{});
+        },
+        else => {
+            const glfw = b.dependency("glfw", .{
+                .target = target,
+                .optimize = optimize,
+            });
+            c_module.linkLibrary(glfw.artifact("glfw"));
+        },
+    }
 
     const zalgebra = b.dependency("zalgebra", .{});
 
@@ -58,7 +67,7 @@ pub fn build(b: *std.Build) void {
     const lessons_step = b.step("lessons", "Build all lessons");
     for (lessons) |lesson_name| {
         const lesson_exe_mod = b.createModule(.{
-            .root_source_file = b.path(b.fmt("src/{s}.zig", .{ lesson_name })),
+            .root_source_file = b.path(b.fmt("src/{s}.zig", .{lesson_name})),
             .target = target,
             .optimize = optimize,
         });
@@ -92,40 +101,7 @@ pub fn build(b: *std.Build) void {
     b.default_step.dependOn(all_step);
 }
 
-const lessons = [_][]const u8{
-    "00_base_code",
-    "01_instance_creation",
-    "02_validation_layers",
-    "03_physical_device_selection",
-    "04_logical_device",
-    "05_window_surface",
-    "06_swap_chain_creation",
-    "07_image_views",
-    "08_graphics_pipeline",
-    "09_shader_module",
-    "10_fixed_functions",
-    "11_render_passes",
-    "12_graphics_pipeline_complete",
-    "13_framebuffers",
-    "14_command_buffers",
-    "15_hello_triangle",
-    "16_frames_in_flight",
-    "17_swap_chain_recreation",
-    "18_vertex_input",
-    "19_vertex_buffer",
-    "20_staging_buffer",
-    "21_index_buffer",
-    "22_descriptor_layout",
-    "23_descriptor_sets",
-    "24_texture_image",
-    "25_sampler",
-    "26_texture_mapping",
-    "27_depth_buffering",
-    "28_model_loading",
-    "29_mipmapping",
-    "30_multisampling",
-    "31_camera"
-};
+const lessons = [_][]const u8{ "00_base_code", "01_instance_creation", "02_validation_layers", "03_physical_device_selection", "04_logical_device", "05_window_surface", "06_swap_chain_creation", "07_image_views", "08_graphics_pipeline", "09_shader_module", "10_fixed_functions", "11_render_passes", "12_graphics_pipeline_complete", "13_framebuffers", "14_command_buffers", "15_hello_triangle", "16_frames_in_flight", "17_swap_chain_recreation", "18_vertex_input", "19_vertex_buffer", "20_staging_buffer", "21_index_buffer", "22_descriptor_layout", "23_descriptor_sets", "24_texture_image", "25_sampler", "26_texture_mapping", "27_depth_buffering", "28_model_loading", "29_mipmapping", "30_multisampling", "31_camera" };
 
 fn addShader(
     b: *std.Build,

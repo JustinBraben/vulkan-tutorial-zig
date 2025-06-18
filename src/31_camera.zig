@@ -1982,70 +1982,6 @@ const Camera = struct {
         self.updated = true;
     }
 
-    // pub fn updateViewMatrix(self: *@This()) void {
-    //     const current_matrix = self.matrices.view;
-
-    //     if (self.camera_type == .firstperson) {
-    //         // First-person camera: rotation then translation
-    //         // This matches Sascha's approach: matrices.view = rotM * transM;
-            
-    //         // Create rotation matrix from Euler angles
-    //         var rot_m = za.Mat4.identity();
-            
-    //         // Apply rotations in the same order as Sascha's code: X, Y, Z
-    //         const x_rot = if (self.flip_y) -self.rotation.x() else self.rotation.x();
-    //         // rot_m = rot_m.mul(za.Mat4.fromAxisAngle(za.Vec3.new(1.0, 0.0, 0.0), za.toRadians(x_rot)));
-    //         // rot_m = rot_m.mul(za.Mat4.fromAxisAngle(za.Vec3.new(0.0, 1.0, 0.0), za.toRadians(self.rotation.y())));
-    //         // rot_m = rot_m.mul(za.Mat4.fromAxisAngle(za.Vec3.new(0.0, 0.0, 1.0), za.toRadians(self.rotation.z())));
-    //         rot_m = rot_m.rotate(x_rot, za.Vec3.new(1.0, 0.0, 0.0));
-    //         rot_m = rot_m.rotate(self.rotation.y(), za.Vec3.new(0.0, 1.0, 0.0));
-    //         rot_m = rot_m.rotate(self.rotation.z(), za.Vec3.new(0.0, 0.0, 1.0));
-
-    //         // Create translation matrix
-    //         var translation = self.position;
-    //         if (self.flip_y) {
-    //             translation.data[1] *= -1.0;
-    //         }
-    //         const trans_m = za.Mat4.fromTranslate(translation);
-
-    //         // For first-person: rotation * translation
-    //         self.matrices.view = rot_m.mul(trans_m);
-    //     } else {
-    //         // Look-at camera: translation then rotation
-    //         // This matches Sascha's approach: matrices.view = transM * rotM;
-            
-    //         // Create rotation matrix
-    //         var rot_m = za.Mat4.identity();
-    //         const x_rot = if (self.flip_y) -self.rotation.x() else self.rotation.x();
-    //         // rot_m = rot_m.mul(za.Mat4.fromAxisAngle(za.Vec3.new(1.0, 0.0, 0.0), za.toRadians(x_rot)));
-    //         // rot_m = rot_m.mul(za.Mat4.fromAxisAngle(za.Vec3.new(0.0, 1.0, 0.0), za.toRadians(self.rotation.y())));
-    //         // rot_m = rot_m.mul(za.Mat4.fromAxisAngle(za.Vec3.new(0.0, 0.0, 1.0), za.toRadians(self.rotation.z())));
-    //         rot_m = rot_m.rotate(x_rot, za.Vec3.new(1.0, 0.0, 0.0));
-    //         rot_m = rot_m.rotate(self.rotation.y(), za.Vec3.new(0.0, 1.0, 0.0));
-    //         rot_m = rot_m.rotate(self.rotation.z(), za.Vec3.new(0.0, 0.0, 1.0));
-
-    //         // Create translation matrix
-    //         var translation = self.position;
-    //         if (self.flip_y) {
-    //             translation.data[1] *= -1.0;
-    //         }
-    //         const trans_m = za.Mat4.fromTranslate(translation);
-
-    //         // For look-at: translation * rotation
-    //         self.matrices.view = trans_m.mul(rot_m);
-    //     }
-
-    //     // Update view position (matches Sascha's calculation)
-    //     self.view_pos = za.Vec4.new(self.position.x(), self.position.y(), self.position.z(), 0.0).mul(
-    //         za.Vec4.new(-1.0, 1.0, -1.0, 1.0)
-    //     );
-
-    //     // Check if matrix changed
-    //     if (!self.matrices.view.eql(current_matrix)) {
-    //         self.updated = true;
-    //     }
-    // }
-
     pub fn moving(self: *@This()) bool {
         return self.keys.left or self.keys.right or self.keys.up or self.keys.down;
     }
@@ -2139,42 +2075,4 @@ const Camera = struct {
         }
         self.updateViewMatrix();
     }
-
-    // pub fn update(self: *@This(), deltaTime: f32) void {
-    //     self.updated = false;
-        
-    //     if (self.camera_type == .firstperson) {
-    //         if (self.moving()) {
-    //             // Calculate camera front vector using Sascha's approach
-    //             const rad_x = za.toRadians(self.rotation.x());
-    //             const rad_y = za.toRadians(self.rotation.y());
-                
-    //             var cam_front = za.Vec3.new(
-    //                 -@cos(rad_x) * @sin(rad_y),
-    //                 @sin(rad_x),
-    //                 @cos(rad_x) * @cos(rad_y)
-    //             );
-    //             cam_front = cam_front.norm();
-
-    //             const move_speed = deltaTime * self.movement_speed;
-    //             const up_vector = za.Vec3.new(0.0, 1.0, 0.0);
-
-    //             if (self.keys.up) {
-    //                 self.position = self.position.add(cam_front.scale(move_speed));
-    //             }
-    //             if (self.keys.down) {
-    //                 self.position = self.position.sub(cam_front.scale(move_speed));
-    //             }
-    //             if (self.keys.left) {
-    //                 const right = cam_front.cross(up_vector).norm();
-    //                 self.position = self.position.sub(right.scale(move_speed));
-    //             }
-    //             if (self.keys.right) {
-    //                 const right = cam_front.cross(up_vector).norm();
-    //                 self.position = self.position.add(right.scale(move_speed));
-    //             }
-    //         }
-    //     }
-    //     self.updateViewMatrix();
-    // }
 };
