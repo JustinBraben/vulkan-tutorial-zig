@@ -72,11 +72,11 @@ const HelloTriangleApplication = struct {
         if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
         c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
         self.window = c.glfwCreateWindow(
-        WIDTH,
-        HEIGHT,
-        "Vulkan",
-        null,
-        null,
+            WIDTH,
+            HEIGHT,
+            "Vulkan",
+            null,
+            null,
         ) orelse return error.WindowInitFailed;
     }
 
@@ -128,7 +128,7 @@ const HelloTriangleApplication = struct {
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags = .{ .enumerate_portability_bit_khr = true },
+            .flags = if (is_macos) .{ .enumerate_portability_bit_khr = true } else .{},
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,

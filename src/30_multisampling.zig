@@ -110,14 +110,14 @@ pub const Vertex = struct {
             _ = self;
 
             var hasher = std.hash.Wyhash.init(0);
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.pos[0])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.pos[1])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.pos[2])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.color[0])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.color[1])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.color[2])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.tex_coord[0])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.tex_coord[1])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.pos[0])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.pos[1])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.pos[2])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.color[0])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.color[1])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.color[2])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.tex_coord[0])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.tex_coord[1])));
             return hasher.final();
         }
 
@@ -157,7 +157,7 @@ const HelloTriangleApplication = struct {
 
     swap_chain: vk.SwapchainKHR = .null_handle,
     swap_chain_images: ?[]vk.Image = null,
-    swap_chain_image_format: vk.Format = .@"undefined",
+    swap_chain_image_format: vk.Format = .undefined,
     swap_chain_extent: vk.Extent2D = .{ .width = 0, .height = 0 },
     swap_chain_image_views: ?[]vk.ImageView = null,
     swap_chain_framebuffers: ?[]vk.Framebuffer = null,
@@ -227,11 +227,11 @@ const HelloTriangleApplication = struct {
         if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
         c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
         self.window = c.glfwCreateWindow(
-        WIDTH,
-        HEIGHT,
-        "Vulkan",
-        null,
-        null,
+            WIDTH,
+            HEIGHT,
+            "Vulkan",
+            null,
+            null,
         ) orelse return error.WindowInitFailed;
         c.glfwSetWindowUserPointer(self.window, self);
         _ = c.glfwSetFramebufferSizeCallback(self.window, framebufferResizeCallback);
@@ -430,7 +430,7 @@ const HelloTriangleApplication = struct {
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags = .{ .enumerate_portability_bit_khr = true },
+            .flags = if (is_macos) .{ .enumerate_portability_bit_khr = true } else .{},
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
@@ -487,16 +487,12 @@ const HelloTriangleApplication = struct {
     }
 
     fn pickPhysicalDevice(self: *Self) !void {
-        var device_count: u32 = undefined;
-        _ = try self.instance.enumeratePhysicalDevices(&device_count, null);
+        const devices = try self.instance.enumeratePhysicalDevicesAlloc(self.allocator);
+        defer self.allocator.free(devices);
 
-        if (device_count == 0) {
+        if (devices.len == 0) {
             return error.NoGPUsSupportVulkan;
         }
-
-        const devices = try self.allocator.alloc(vk.PhysicalDevice, device_count);
-        defer self.allocator.free(devices);
-        _ = try self.instance.enumeratePhysicalDevices(&device_count, devices.ptr);
 
         for (devices) |device| {
             if (try self.isDeviceSuitable(device)) {
@@ -627,7 +623,7 @@ const HelloTriangleApplication = struct {
                 .store_op = .store,
                 .stencil_load_op = .dont_care,
                 .stencil_store_op = .dont_care,
-                .initial_layout = .@"undefined",
+                .initial_layout = .undefined,
                 .final_layout = .color_attachment_optimal,
             },
             .{
@@ -638,7 +634,7 @@ const HelloTriangleApplication = struct {
                 .store_op = .dont_care,
                 .stencil_load_op = .dont_care,
                 .stencil_store_op = .dont_care,
-                .initial_layout = .@"undefined",
+                .initial_layout = .undefined,
                 .final_layout = .depth_stencil_attachment_optimal,
             },
             .{
@@ -649,7 +645,7 @@ const HelloTriangleApplication = struct {
                 .store_op = .store,
                 .stencil_load_op = .dont_care,
                 .stencil_store_op = .dont_care,
-                .initial_layout = .@"undefined",
+                .initial_layout = .undefined,
                 .final_layout = .present_src_khr,
             },
         };
@@ -972,7 +968,7 @@ const HelloTriangleApplication = struct {
 
         try self.createImage(@intCast(tex_width), @intCast(tex_height), self.mip_levels, .{ .@"1_bit" = true }, .r8g8b8a8_srgb, .optimal, .{ .transfer_src_bit = true, .transfer_dst_bit = true, .sampled_bit = true }, .{ .device_local_bit = true }, &self.texture_image, &self.texture_image_memory);
 
-        try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .@"undefined", .transfer_dst_optimal, self.mip_levels);
+        try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .undefined, .transfer_dst_optimal, self.mip_levels);
         try self.copyBufferToImage(staging_buffer, self.texture_image, @intCast(tex_width), @intCast(tex_height));
 
         self.device.destroyBuffer(staging_buffer, null);
@@ -1144,7 +1140,7 @@ const HelloTriangleApplication = struct {
             .array_layers = 1,
             .format = format,
             .tiling = tiling,
-            .initial_layout = .@"undefined",
+            .initial_layout = .undefined,
             .usage = usage,
             .samples = num_samples,
             .sharing_mode = .exclusive,
@@ -1185,7 +1181,7 @@ const HelloTriangleApplication = struct {
         var source_stage: vk.PipelineStageFlags = undefined;
         var destination_stage: vk.PipelineStageFlags = undefined;
 
-        if (old_layout == .@"undefined" and new_layout == .transfer_dst_optimal) {
+        if (old_layout == .undefined and new_layout == .transfer_dst_optimal) {
             barrier[0].src_access_mask = .{};
             barrier[0].dst_access_mask = .{ .transfer_write_bit = true };
 
@@ -1241,7 +1237,7 @@ const HelloTriangleApplication = struct {
                 // Vertices are stored as [x1, y1, z1, x2, y2, z2, ...]
                 // So vertex index N corresponds to positions [N*3, N*3+1, N*3+2]
                 const vertex_idx = index.vertex.? * 3;
-                
+
                 // Texture coordinates are stored as [u1, v1, u2, v2, ...]
                 // So tex_coord index N corresponds to positions [N*2, N*2+1]
                 const tex_coord_idx = if (index.tex_coord) |tc| tc * 2 else 0;
@@ -1666,7 +1662,7 @@ const HelloTriangleApplication = struct {
         details.capabilities = try self.instance.getPhysicalDeviceSurfaceCapabilitiesKHR(device, self.surface);
 
         details.formats = try self.instance.getPhysicalDeviceSurfaceFormatsAllocKHR(device, self.surface, details.allocator);
-        
+
         details.present_modes = try self.instance.getPhysicalDeviceSurfacePresentModesAllocKHR(device, self.surface, details.allocator);
 
         return details;

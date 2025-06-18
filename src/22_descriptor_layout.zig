@@ -132,7 +132,7 @@ const HelloTriangleApplication = struct {
 
     swap_chain: vk.SwapchainKHR = .null_handle,
     swap_chain_images: ?[]vk.Image = null,
-    swap_chain_image_format: vk.Format = .@"undefined",
+    swap_chain_image_format: vk.Format = .undefined,
     swap_chain_extent: vk.Extent2D = .{ .width = 0, .height = 0 },
     swap_chain_image_views: ?[]vk.ImageView = null,
     swap_chain_framebuffers: ?[]vk.Framebuffer = null,
@@ -177,11 +177,11 @@ const HelloTriangleApplication = struct {
         if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
         c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
         self.window = c.glfwCreateWindow(
-        WIDTH,
-        HEIGHT,
-        "Vulkan",
-        null,
-        null,
+            WIDTH,
+            HEIGHT,
+            "Vulkan",
+            null,
+            null,
         ) orelse return error.WindowInitFailed;
         c.glfwSetWindowUserPointer(self.window, self);
         _ = c.glfwSetFramebufferSizeCallback(self.window, framebufferResizeCallback);
@@ -351,7 +351,7 @@ const HelloTriangleApplication = struct {
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags = .{ .enumerate_portability_bit_khr = true },
+            .flags = if (is_macos) .{ .enumerate_portability_bit_khr = true } else .{},
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
@@ -551,7 +551,7 @@ const HelloTriangleApplication = struct {
             .store_op = .store,
             .stencil_load_op = .dont_care,
             .stencil_store_op = .dont_care,
-            .initial_layout = .@"undefined",
+            .initial_layout = .undefined,
             .final_layout = .present_src_khr,
         }};
 
@@ -720,8 +720,8 @@ const HelloTriangleApplication = struct {
         // Errors if we set the the descriptor layout without descriptor set being used later
         self.pipeline_layout = try self.device.createPipelineLayout(&.{
             .flags = .{},
-            .set_layout_count = 0,  // <- No descriptor sets for now
-            .p_set_layouts = undefined,  // <- Not used when count is 0
+            .set_layout_count = 0, // <- No descriptor sets for now
+            .p_set_layouts = undefined, // <- Not used when count is 0
             .push_constant_range_count = 0,
             .p_push_constant_ranges = undefined,
         }, null);
@@ -986,12 +986,7 @@ const HelloTriangleApplication = struct {
         var ubo = UniformBufferObject{
             .model = Mat4.fromRotation(time * 90.0, Vec3.new(0.0, 0.0, 1.0)),
             .view = za.lookAt(Vec3.new(2.0, 2.0, 2.0), Vec3.zero(), Vec3.up()),
-            .proj = za.perspective(
-                45.0, 
-                @as(f32, @floatFromInt(self.swap_chain_extent.width)) / @as(f32, @floatFromInt(self.swap_chain_extent.height)), 
-                0.1, 
-                10.0
-            ),
+            .proj = za.perspective(45.0, @as(f32, @floatFromInt(self.swap_chain_extent.width)) / @as(f32, @floatFromInt(self.swap_chain_extent.height)), 0.1, 10.0),
         };
         ubo.proj.data[1][1] *= -1;
 
@@ -1100,7 +1095,7 @@ const HelloTriangleApplication = struct {
         details.capabilities = try self.instance.getPhysicalDeviceSurfaceCapabilitiesKHR(device, self.surface);
 
         details.formats = try self.instance.getPhysicalDeviceSurfaceFormatsAllocKHR(device, self.surface, details.allocator);
-        
+
         details.present_modes = try self.instance.getPhysicalDeviceSurfacePresentModesAllocKHR(device, self.surface, details.allocator);
 
         return details;

@@ -132,7 +132,7 @@ const HelloTriangleApplication = struct {
 
     swap_chain: vk.SwapchainKHR = .null_handle,
     swap_chain_images: ?[]vk.Image = null,
-    swap_chain_image_format: vk.Format = .@"undefined",
+    swap_chain_image_format: vk.Format = .undefined,
     swap_chain_extent: vk.Extent2D = .{ .width = 0, .height = 0 },
     swap_chain_image_views: ?[]vk.ImageView = null,
     swap_chain_framebuffers: ?[]vk.Framebuffer = null,
@@ -183,11 +183,11 @@ const HelloTriangleApplication = struct {
         if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
         c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
         self.window = c.glfwCreateWindow(
-        WIDTH,
-        HEIGHT,
-        "Vulkan",
-        null,
-        null,
+            WIDTH,
+            HEIGHT,
+            "Vulkan",
+            null,
+            null,
         ) orelse return error.WindowInitFailed;
         c.glfwSetWindowUserPointer(self.window, self);
         _ = c.glfwSetFramebufferSizeCallback(self.window, framebufferResizeCallback);
@@ -366,7 +366,7 @@ const HelloTriangleApplication = struct {
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags = .{ .enumerate_portability_bit_khr = true },
+            .flags = if (is_macos) .{ .enumerate_portability_bit_khr = true } else .{},
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
@@ -566,7 +566,7 @@ const HelloTriangleApplication = struct {
             .store_op = .store,
             .stencil_load_op = .dont_care,
             .stencil_store_op = .dont_care,
-            .initial_layout = .@"undefined",
+            .initial_layout = .undefined,
             .final_layout = .present_src_khr,
         }};
 
@@ -818,7 +818,7 @@ const HelloTriangleApplication = struct {
 
         try self.createImage(@intCast(tex_width), @intCast(tex_height), .r8g8b8a8_srgb, .optimal, .{ .transfer_dst_bit = true, .sampled_bit = true }, .{ .device_local_bit = true }, &self.texture_image, &self.texture_image_memory);
 
-        try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .@"undefined", .transfer_dst_optimal);
+        try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .undefined, .transfer_dst_optimal);
         try self.copyBufferToImage(staging_buffer, self.texture_image, @as(u32, @intCast(tex_width)), @intCast(tex_height));
         try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .transfer_dst_optimal, .shader_read_only_optimal);
 
@@ -841,7 +841,7 @@ const HelloTriangleApplication = struct {
             .array_layers = 1,
             .format = format,
             .tiling = tiling,
-            .initial_layout = .@"undefined",
+            .initial_layout = .undefined,
             .usage = usage,
             .samples = .{ .@"1_bit" = true },
             .sharing_mode = .exclusive,
@@ -882,7 +882,7 @@ const HelloTriangleApplication = struct {
         var source_stage: vk.PipelineStageFlags = undefined;
         var destination_stage: vk.PipelineStageFlags = undefined;
 
-        if (old_layout == .@"undefined" and new_layout == .transfer_dst_optimal) {
+        if (old_layout == .undefined and new_layout == .transfer_dst_optimal) {
             barrier[0].src_access_mask = .{};
             barrier[0].dst_access_mask = .{ .transfer_write_bit = true };
 
@@ -1297,7 +1297,7 @@ const HelloTriangleApplication = struct {
         details.capabilities = try self.instance.getPhysicalDeviceSurfaceCapabilitiesKHR(device, self.surface);
 
         details.formats = try self.instance.getPhysicalDeviceSurfaceFormatsAllocKHR(device, self.surface, details.allocator);
-        
+
         details.present_modes = try self.instance.getPhysicalDeviceSurfacePresentModesAllocKHR(device, self.surface, details.allocator);
 
         return details;

@@ -111,14 +111,14 @@ pub const Vertex = struct {
             _ = self;
 
             var hasher = std.hash.Wyhash.init(0);
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.pos[0])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.pos[1])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.pos[2])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.color[0])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.color[1])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.color[2])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.tex_coord[0])));
-            std.hash.autoHash(&hasher, @as(u32, @intFromFloat( a.tex_coord[1])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.pos[0])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.pos[1])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.pos[2])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.color[0])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.color[1])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.color[2])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.tex_coord[0])));
+            std.hash.autoHash(&hasher, @as(u32, @intFromFloat(a.tex_coord[1])));
             return hasher.final();
         }
 
@@ -158,7 +158,7 @@ const HelloTriangleApplication = struct {
 
     swap_chain: vk.SwapchainKHR = .null_handle,
     swap_chain_images: ?[]vk.Image = null,
-    swap_chain_image_format: vk.Format = .@"undefined",
+    swap_chain_image_format: vk.Format = .undefined,
     swap_chain_extent: vk.Extent2D = .{ .width = 0, .height = 0 },
     swap_chain_image_views: ?[]vk.ImageView = null,
     swap_chain_framebuffers: ?[]vk.Framebuffer = null,
@@ -234,11 +234,11 @@ const HelloTriangleApplication = struct {
         if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
         c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
         self.window = c.glfwCreateWindow(
-        WIDTH,
-        HEIGHT,
-        "Vulkan",
-        null,
-        null,
+            WIDTH,
+            HEIGHT,
+            "Vulkan",
+            null,
+            null,
         ) orelse return error.WindowInitFailed;
         c.glfwSetWindowUserPointer(self.window, self);
         _ = c.glfwSetFramebufferSizeCallback(self.window, framebufferResizeCallback);
@@ -246,7 +246,7 @@ const HelloTriangleApplication = struct {
         // Add mouse callbacks
         _ = c.glfwSetCursorPosCallback(self.window, mouseCallback);
         _ = c.glfwSetMouseButtonCallback(self.window, mouseButtonCallback);
-        
+
         // Hide cursor for FPS-style camera
         c.glfwSetInputMode(self.window, c.GLFW_CURSOR, c.GLFW_CURSOR_DISABLED);
     }
@@ -258,25 +258,25 @@ const HelloTriangleApplication = struct {
 
     fn mouseCallback(window: ?*c.GLFWwindow, xpos: f64, ypos: f64) callconv(.c) void {
         var self: *Self = @ptrCast(@alignCast(c.glfwGetWindowUserPointer(window)));
-        
+
         if (self.first_mouse) {
             self.mouse_last_x = xpos;
             self.mouse_last_y = ypos;
             self.first_mouse = false;
         }
-        
+
         const xoffset = xpos - self.mouse_last_x;
         const yoffset = self.mouse_last_y - ypos; // Reversed since y-coordinates go from bottom to top
-        
+
         self.mouse_last_x = xpos;
         self.mouse_last_y = ypos;
-        
+
         const sensitivity = 0.1;
-        const yaw = @as(f32, @floatCast(-xoffset * sensitivity));  // Negate here!
+        const yaw = @as(f32, @floatCast(-xoffset * sensitivity)); // Negate here!
         const pitch = @as(f32, @floatCast(yoffset * sensitivity));
-        
+
         self.camera.rotation = self.camera.rotation.add(Vec3.new(pitch, yaw, 0.0));
-        
+
         // Limit pitch to avoid gimbal lock
         if (self.camera.rotation.x() > 85.0) {
             self.camera.rotation.data[0] = 85.0;
@@ -289,7 +289,7 @@ const HelloTriangleApplication = struct {
     fn mouseButtonCallback(window: ?*c.GLFWwindow, button: c_int, action: c_int, mods: c_int) callconv(.c) void {
         _ = mods;
         var self: *Self = @ptrCast(@alignCast(c.glfwGetWindowUserPointer(window)));
-        
+
         if (button == c.GLFW_MOUSE_BUTTON_LEFT) {
             if (action == c.GLFW_PRESS) {
                 self.mouse_pressed = true;
@@ -311,11 +311,7 @@ const HelloTriangleApplication = struct {
         self.camera.camera_type = .firstperson;
         self.camera.setPosition(Vec3.new(1.0, 1.0, -2.0)); // Start further away
         self.camera.setRotation(Vec3.new(5.0, -30.0, -30.0)); // Look down and to the side
-        self.camera.setPerspective(
-            60.0, 
-            @as(f32, @floatFromInt(self.swap_chain_extent.width)) / @as(f32, @floatFromInt(self.swap_chain_extent.height)), 
-            0.1, 
-            100.0 // Increase far plane
+        self.camera.setPerspective(60.0, @as(f32, @floatFromInt(self.swap_chain_extent.width)) / @as(f32, @floatFromInt(self.swap_chain_extent.height)), 0.1, 100.0 // Increase far plane
         );
         self.camera.movement_speed = 2.0; // Slower movement
         self.camera.rotation_speed = 0.5;
@@ -343,12 +339,12 @@ const HelloTriangleApplication = struct {
 
     fn mainLoop(self: *Self) !void {
         var last_time = try std.time.Instant.now();
-    
+
         while (c.glfwWindowShouldClose(self.window) == c.GLFW_FALSE) {
             const current_time = try std.time.Instant.now();
             const delta_time = @as(f32, @floatFromInt(current_time.since(last_time))) / @as(f32, @floatFromInt(std.time.ns_per_s));
             last_time = current_time;
-            
+
             c.glfwPollEvents();
             try self.handleInput(delta_time);
             self.camera.update(delta_time);
@@ -360,32 +356,32 @@ const HelloTriangleApplication = struct {
 
     fn handleInput(self: *Self, delta_time: f32) !void {
         const speed = self.camera.movement_speed * delta_time;
-        
+
         // WASD movement
         if (c.glfwGetKey(self.window, c.GLFW_KEY_W) == c.GLFW_PRESS) {
             self.camera.keys.up = true;
         } else {
             self.camera.keys.up = false;
         }
-        
+
         if (c.glfwGetKey(self.window, c.GLFW_KEY_S) == c.GLFW_PRESS) {
             self.camera.keys.down = true;
         } else {
             self.camera.keys.down = false;
         }
-        
+
         if (c.glfwGetKey(self.window, c.GLFW_KEY_A) == c.GLFW_PRESS) {
             self.camera.keys.left = true;
         } else {
             self.camera.keys.left = false;
         }
-        
+
         if (c.glfwGetKey(self.window, c.GLFW_KEY_D) == c.GLFW_PRESS) {
             self.camera.keys.right = true;
         } else {
             self.camera.keys.right = false;
         }
-        
+
         // Arrow keys for rotation
         if (c.glfwGetKey(self.window, c.GLFW_KEY_LEFT) == c.GLFW_PRESS) {
             self.camera.rotation = self.camera.rotation.add(Vec3.new(0, -speed * 50.0, 0));
@@ -399,7 +395,7 @@ const HelloTriangleApplication = struct {
         if (c.glfwGetKey(self.window, c.GLFW_KEY_DOWN) == c.GLFW_PRESS) {
             self.camera.rotation = self.camera.rotation.add(Vec3.new(speed * 50.0, 0, 0));
         }
-        
+
         // ESC to exit
         if (c.glfwGetKey(self.window, c.GLFW_KEY_ESCAPE) == c.GLFW_PRESS) {
             c.glfwSetWindowShouldClose(self.window, c.GLFW_TRUE);
@@ -557,7 +553,7 @@ const HelloTriangleApplication = struct {
         defer extensions.deinit();
 
         var create_info = vk.InstanceCreateInfo{
-            .flags = .{ .enumerate_portability_bit_khr = true },
+            .flags = if (is_macos) .{ .enumerate_portability_bit_khr = true } else .{},
             .p_application_info = &app_info,
             .enabled_layer_count = 0,
             .pp_enabled_layer_names = undefined,
@@ -614,16 +610,12 @@ const HelloTriangleApplication = struct {
     }
 
     fn pickPhysicalDevice(self: *Self) !void {
-        var device_count: u32 = undefined;
-        _ = try self.instance.enumeratePhysicalDevices(&device_count, null);
+        const devices = try self.instance.enumeratePhysicalDevicesAlloc(self.allocator);
+        defer self.allocator.free(devices);
 
-        if (device_count == 0) {
+        if (devices.len == 0) {
             return error.NoGPUsSupportVulkan;
         }
-
-        const devices = try self.allocator.alloc(vk.PhysicalDevice, device_count);
-        defer self.allocator.free(devices);
-        _ = try self.instance.enumeratePhysicalDevices(&device_count, devices.ptr);
 
         for (devices) |device| {
             if (try self.isDeviceSuitable(device)) {
@@ -754,7 +746,7 @@ const HelloTriangleApplication = struct {
                 .store_op = .store,
                 .stencil_load_op = .dont_care,
                 .stencil_store_op = .dont_care,
-                .initial_layout = .@"undefined",
+                .initial_layout = .undefined,
                 .final_layout = .color_attachment_optimal,
             },
             .{
@@ -765,7 +757,7 @@ const HelloTriangleApplication = struct {
                 .store_op = .dont_care,
                 .stencil_load_op = .dont_care,
                 .stencil_store_op = .dont_care,
-                .initial_layout = .@"undefined",
+                .initial_layout = .undefined,
                 .final_layout = .depth_stencil_attachment_optimal,
             },
             .{
@@ -776,7 +768,7 @@ const HelloTriangleApplication = struct {
                 .store_op = .store,
                 .stencil_load_op = .dont_care,
                 .stencil_store_op = .dont_care,
-                .initial_layout = .@"undefined",
+                .initial_layout = .undefined,
                 .final_layout = .present_src_khr,
             },
         };
@@ -1099,7 +1091,7 @@ const HelloTriangleApplication = struct {
 
         try self.createImage(@intCast(tex_width), @intCast(tex_height), self.mip_levels, .{ .@"1_bit" = true }, .r8g8b8a8_srgb, .optimal, .{ .transfer_src_bit = true, .transfer_dst_bit = true, .sampled_bit = true }, .{ .device_local_bit = true }, &self.texture_image, &self.texture_image_memory);
 
-        try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .@"undefined", .transfer_dst_optimal, self.mip_levels);
+        try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .undefined, .transfer_dst_optimal, self.mip_levels);
         try self.copyBufferToImage(staging_buffer, self.texture_image, @intCast(tex_width), @intCast(tex_height));
 
         self.device.destroyBuffer(staging_buffer, null);
@@ -1271,7 +1263,7 @@ const HelloTriangleApplication = struct {
             .array_layers = 1,
             .format = format,
             .tiling = tiling,
-            .initial_layout = .@"undefined",
+            .initial_layout = .undefined,
             .usage = usage,
             .samples = num_samples,
             .sharing_mode = .exclusive,
@@ -1312,7 +1304,7 @@ const HelloTriangleApplication = struct {
         var source_stage: vk.PipelineStageFlags = undefined;
         var destination_stage: vk.PipelineStageFlags = undefined;
 
-        if (old_layout == .@"undefined" and new_layout == .transfer_dst_optimal) {
+        if (old_layout == .undefined and new_layout == .transfer_dst_optimal) {
             barrier[0].src_access_mask = .{};
             barrier[0].dst_access_mask = .{ .transfer_write_bit = true };
 
@@ -1368,7 +1360,7 @@ const HelloTriangleApplication = struct {
                 // Vertices are stored as [x1, y1, z1, x2, y2, z2, ...]
                 // So vertex index N corresponds to positions [N*3, N*3+1, N*3+2]
                 const vertex_idx = index.vertex.? * 3;
-                
+
                 // Texture coordinates are stored as [u1, v1, u2, v2, ...]
                 // So tex_coord index N corresponds to positions [N*2, N*2+1]
                 const tex_coord_idx = if (index.tex_coord) |tc| tc * 2 else 0;
@@ -1790,7 +1782,7 @@ const HelloTriangleApplication = struct {
         details.capabilities = try self.instance.getPhysicalDeviceSurfaceCapabilitiesKHR(device, self.surface);
 
         details.formats = try self.instance.getPhysicalDeviceSurfaceFormatsAllocKHR(device, self.surface, details.allocator);
-        
+
         details.present_modes = try self.instance.getPhysicalDeviceSurfacePresentModesAllocKHR(device, self.surface, details.allocator);
 
         return details;
@@ -1924,8 +1916,8 @@ pub fn main() void {
 
 const CameraType = enum { lookat, firstperson };
 const Matrices = struct {
-	perspective: za.Mat4 = za.Mat4.zero(),
-	view: za.Mat4 = za.Mat4.zero(),
+    perspective: za.Mat4 = za.Mat4.zero(),
+    view: za.Mat4 = za.Mat4.zero(),
 };
 const Keys = struct {
     left: bool = false,
@@ -1962,11 +1954,7 @@ const Camera = struct {
             const rad_pitch = za.toRadians(self.rotation.x());
 
             // Calculate forward vector
-            const forward = Vec3.new(
-                @cos(rad_pitch) * @sin(rad_yaw),
-                @sin(rad_pitch),
-                @cos(rad_pitch) * @cos(rad_yaw)
-            ).norm();
+            const forward = Vec3.new(@cos(rad_pitch) * @sin(rad_yaw), @sin(rad_pitch), @cos(rad_pitch) * @cos(rad_yaw)).norm();
 
             // Calculate right and up vectors
             const world_up = Vec3.new(0.0, 1.0, 0.0);
@@ -1984,13 +1972,11 @@ const Camera = struct {
             };
         } else {
             // For look-at camera, use the lookAt function
-            self.matrices.view = Mat4.lookAt(
-                self.position,
-                Vec3.zero(), // Look at origin
+            self.matrices.view = Mat4.lookAt(self.position, Vec3.zero(), // Look at origin
                 Vec3.new(0.0, 1.0, 0.0) // Y is up
             );
         }
-        
+
         self.updated = true;
     }
 
@@ -2008,8 +1994,10 @@ const Camera = struct {
         self.updated = true;
     }
 
-    pub fn updateAspectRatio(self: *@This(), aspect: f32,) void
-    {
+    pub fn updateAspectRatio(
+        self: *@This(),
+        aspect: f32,
+    ) void {
         const current_matrix = self.matrices.perspective;
         self.matrices.perspective = za.perspective(self.fov, aspect, self.z_near, self.z_far);
         if (self.flip_y) {
@@ -2020,52 +2008,40 @@ const Camera = struct {
         }
     }
 
-    pub fn setPosition(self: *@This(), pos: za.Vec3) void
-    {
+    pub fn setPosition(self: *@This(), pos: za.Vec3) void {
         self.position = pos;
         self.updateViewMatrix();
     }
 
-    pub fn setRotation(self: *@This(), rot: za.Vec3) void
-    {
+    pub fn setRotation(self: *@This(), rot: za.Vec3) void {
         self.rotation = rot;
         self.updateViewMatrix();
     }
 
-    pub fn rotate(self: *@This(), delta: za.Vec3) void
-    {
+    pub fn rotate(self: *@This(), delta: za.Vec3) void {
         self.rotation = self.rotation.add(delta);
         self.updateViewMatrix();
     }
 
-    pub fn setTranslation(self: *@This(), trans: za.Vec3) void
-    {
+    pub fn setTranslation(self: *@This(), trans: za.Vec3) void {
         self.position = trans;
         self.updateViewMatrix();
     }
 
-    pub fn translate(self: *@This(), delta: za.Vec3) void
-    {
+    pub fn translate(self: *@This(), delta: za.Vec3) void {
         self.position = self.position.add(delta);
         self.updateViewMatrix();
     }
 
-    pub fn update(self: *@This(), deltaTime: f32) void
-    {
+    pub fn update(self: *@This(), deltaTime: f32) void {
         self.updated = false;
-        if (self.camera_type == .firstperson)
-        {
-            if (self.moving())
-            {
+        if (self.camera_type == .firstperson) {
+            if (self.moving()) {
                 const rad_yaw = za.toRadians(self.rotation.y());
                 const rad_pitch = za.toRadians(self.rotation.x());
 
                 // Calculate forward vector (same as in updateViewMatrix)
-                var cam_front = Vec3.new(
-                    @cos(rad_pitch) * @sin(rad_yaw),
-                    @sin(rad_pitch),
-                    @cos(rad_pitch) * @cos(rad_yaw)
-                );
+                var cam_front = Vec3.new(@cos(rad_pitch) * @sin(rad_yaw), @sin(rad_pitch), @cos(rad_pitch) * @cos(rad_yaw));
                 cam_front = cam_front.norm();
 
                 // Use Y as up vector for standard FPS controls
@@ -2081,7 +2057,7 @@ const Camera = struct {
                     self.position = self.position.sub(cam_right.scale(move_speed));
                 if (self.keys.right)
                     self.position = self.position.add(cam_right.scale(move_speed));
-                    
+
                 self.updated = true;
             }
         }
