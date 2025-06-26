@@ -27,10 +27,11 @@ const validation_layers = [_][*:0]const u8{"VK_LAYER_KHRONOS_validation"};
 
 const device_extensions = [_][*:0]const u8{
     vk.extensions.khr_swapchain.name,
-    vk.extensions.khr_synchronization_2.name,
-    vk.extensions.ext_descriptor_buffer.name,
     vk.extensions.khr_buffer_device_address.name, // Required for descriptor buffer
     vk.extensions.ext_descriptor_indexing.name,    // Required dependency
+    vk.extensions.khr_synchronization_2.name,
+    vk.extensions.khr_maintenance_3.name,
+    vk.extensions.ext_descriptor_buffer.name,
 };
 const macos_device_extensions = [_][*:0]const u8{vk.extensions.khr_portability_subset.name};
 
@@ -551,18 +552,48 @@ const HelloTriangleApplication = struct {
         self.graphics_queue = self.device.getDeviceQueue(indices.graphics_family.?, 0);
         self.present_queue = self.device.getDeviceQueue(indices.present_family.?, 0);
 
-        self.descriptor_buffer_properties.s_type = .physical_device_descriptor_buffer_properties_ext;
-        self.descriptor_buffer_properties.p_next = null;
+        // self.descriptor_buffer_properties.s_type = .physical_device_descriptor_buffer_properties_ext;
+        // self.descriptor_buffer_properties.p_next = null;
 
-        // Get descriptor buffer properties
-        self.device_properties = vk.PhysicalDeviceProperties2{
-            .s_type = .physical_device_properties_2,
-            .p_next = &self.descriptor_buffer_properties,
-            .properties = undefined,
-        };
-        self.instance.getPhysicalDeviceProperties2(self.physical_device, &self.device_properties);
+        // // Get descriptor buffer properties
+        // self.device_properties = vk.PhysicalDeviceProperties2{
+        //     .s_type = .physical_device_properties_2,
+        //     .p_next = &self.descriptor_buffer_properties,
+        //     .properties = undefined,
+        // };
+        
+        // self.instance.getPhysicalDeviceProperties2(self.physical_device, &self.device_properties);
+
+        // var descriptor_buffer_props: vk.PhysicalDeviceDescriptorBufferPropertiesEXT = undefined;
+        // self.descriptor_buffer_properties.s_type = .physical_device_descriptor_buffer_properties_ext;
+        // descriptor_buffer_props.p_next = null;
+
+        // // var props2: vk.PhysicalDeviceProperties2 = undefined;
+        // self.device_properties = undefined;
+        // self.device_properties.s_type = .physical_device_properties_2;
+        // self.device_properties.p_next = &descriptor_buffer_props;
+
+        // self.instance.getPhysicalDeviceProperties2(self.physical_device, &self.device_properties);
+        // self.descriptor_buffer_properties = descriptor_buffer_props;
 
         // std.debug.print("device props: {any}\n", .{self.device_properties});
+
+        // Initialize the structure with sType
+        self.descriptor_buffer_properties.s_type = .physical_device_descriptor_buffer_properties_ext;
+        self.descriptor_buffer_properties.p_next = null;
+        
+        var props2: vk.PhysicalDeviceProperties2 = undefined;
+        props2.s_type = .physical_device_properties_2;
+        props2.p_next = &self.descriptor_buffer_properties;
+        
+        self.instance.getPhysicalDeviceProperties2(self.physical_device, &props2);
+
+        // Debug print all relevant sizes
+        std.debug.print("Descriptor buffer properties:\n", .{});
+        std.debug.print("  uniform_buffer_descriptor_size: {d}\n", .{self.descriptor_buffer_properties.uniform_buffer_descriptor_size});
+        std.debug.print("  combined_image_sampler_descriptor_size: {d}\n", .{self.descriptor_buffer_properties.combined_image_sampler_descriptor_size});
+        std.debug.print("  sampler_descriptor_size: {d}\n", .{self.descriptor_buffer_properties.sampler_descriptor_size});
+        std.debug.print("  sampled_image_descriptor_size: {d}\n", .{self.descriptor_buffer_properties.sampled_image_descriptor_size});
     }
 
     fn createSwapChain(self: *Self) !void {
@@ -689,15 +720,26 @@ const HelloTriangleApplication = struct {
         };
 
         const layout_info = vk.DescriptorSetLayoutCreateInfo{
-            .flags = .{ .descriptor_buffer_bit_ext = true }, // Add this flag!
-            .binding_count = bindings.len,
+            .flags = .{ .descriptor_buffer_bit_ext = true },
+            .binding_count = @intCast(bindings.len),
             .p_bindings = &bindings,
         };
 
         self.descriptor_set_layout = try self.device.createDescriptorSetLayout(&layout_info, null);
 
-        // Just get the total layout size - we'll use the descriptor sizes from properties
-        self.descriptor_size_ubo = self.device.getDescriptorSetLayoutSizeEXT(self.descriptor_set_layout);
+        // Debug: Check offsets for each binding
+        const binding0_offset = self.device.getDescriptorSetLayoutBindingOffsetEXT(
+            self.descriptor_set_layout, 
+            0
+        );
+        const binding1_offset = self.device.getDescriptorSetLayoutBindingOffsetEXT(
+            self.descriptor_set_layout, 
+            1
+        );
+        
+        std.debug.print("Binding 0 offset: {d}\n", .{binding0_offset});
+        std.debug.print("Binding 1 offset: {d}\n", .{binding1_offset});
+        std.debug.print("Layout size: {d}\n", .{self.device.getDescriptorSetLayoutSizeEXT(self.descriptor_set_layout)});
     }
 
     fn createGraphicsPipeline(self: *Self) !void {
@@ -1172,6 +1214,11 @@ const HelloTriangleApplication = struct {
         const descriptor_buffer_size = descriptor_set_size * MAX_FRAMES_IN_FLIGHT;
 
         std.debug.print("descriptor_set_size: {d}\n", .{descriptor_set_size});
+        std.debug.print("UBO descriptor size: {d}\n", .{self.descriptor_buffer_properties.uniform_buffer_descriptor_size});
+        std.debug.print("Combined image sampler descriptor size: {d}\n", .{self.descriptor_buffer_properties.combined_image_sampler_descriptor_size});
+        std.debug.print("offset alignment descriptor buffer size: {d}\n", .{self.descriptor_buffer_properties.descriptor_buffer_offset_alignment});
+        std.debug.print("Texture sampler: {any}\n", .{self.texture_sampler});
+        std.debug.print("Texture image view: {any}\n", .{self.texture_image_view});
 
         if (self.descriptor_buffer_properties.max_resource_descriptor_buffer_bindings < 2) {
             return error.SelectedDeviceDoesNotSupportMoreThan2DescriptorBindings;
@@ -1221,27 +1268,33 @@ const HelloTriangleApplication = struct {
         std.debug.print("descriptor_buffer_address: {d}\n", .{self.descriptor_buffer_address});
         
         // Map the descriptor buffer and write descriptors
-        const data = try self.device.mapMemory(self.descriptor_buffer_memory, 0, descriptor_buffer_size, .{}) orelse return error.dataIsNull;
+        const data = try self.device.mapMemory(self.descriptor_buffer_memory, 0, vk.WHOLE_SIZE, .{}) orelse return error.dataIsNull;
         const mapped_data: [*]u8 = @ptrCast(data);
 
         std.debug.print("mapped_data: {any}\n", .{&mapped_data});
         
         // Write descriptors for each frame
         for (0..MAX_FRAMES_IN_FLIGHT) |i| {
-            const offset = i * descriptor_set_size;
+            const frame_offset = i * descriptor_set_size;
             std.debug.print("Descriptor contents for frame {d}:\n", .{i});
-            // hexDump(mapped_data + offset, descriptor_set_size);
-            // mapped_data[0] = 0xAB;
-            // hexDump(mapped_data + offset, descriptor_set_size);
-            // @memset(mapped_data + offset, 0xAB);
-            // std.mem.copyForwards(u8, mapped_data[0..offset], "AB");
 
             // Get the buffer address for this frame's uniform buffer
             const ubo_buffer_addr = self.device.getBufferDeviceAddress(&.{ 
                 .buffer = self.uniform_buffers.?[i] 
             });
-
             std.debug.print("UBO[{}] address = 0x{x}\n", .{i, ubo_buffer_addr});
+
+            // Get the actual offsets for each binding
+            const ubo_offset = self.device.getDescriptorSetLayoutBindingOffsetEXT(
+                self.descriptor_set_layout, 
+                0  // binding 0
+            );
+            const sampler_offset = self.device.getDescriptorSetLayoutBindingOffsetEXT(
+                self.descriptor_set_layout, 
+                1  // binding 1
+            );
+            std.debug.print("Frame {}: UBO offset = {}, Sampler offset = {}\n", 
+        .{i, ubo_offset, sampler_offset});
             
             // Write uniform buffer descriptor
             const ubo_descriptor_info = vk.DescriptorGetInfoEXT{
@@ -1259,17 +1312,18 @@ const HelloTriangleApplication = struct {
             self.device.getDescriptorEXT(
                 &ubo_descriptor_info,
                 self.descriptor_buffer_properties.uniform_buffer_descriptor_size,
-                mapped_data + offset
+                mapped_data + frame_offset + ubo_offset, // Use ubo_offset, not 0!
             );
 
             std.debug.print("After writing UBO (frame {}):\n", .{i});
-            hexDump(mapped_data + offset, 32);
+            hexDump(mapped_data + frame_offset, 32);
             
             // Get the offset for binding 1
             const binding_offset = self.device.getDescriptorSetLayoutBindingOffsetEXT(
                 self.descriptor_set_layout, 
                 1
             );
+            std.debug.print("Binding 1 offset: {d}\n", .{binding_offset});
             
             // Write combined image sampler descriptor
             const sampler_descriptor_info = vk.DescriptorGetInfoEXT{
@@ -1287,11 +1341,11 @@ const HelloTriangleApplication = struct {
             self.device.getDescriptorEXT(
                 &sampler_descriptor_info,
                 self.descriptor_buffer_properties.combined_image_sampler_descriptor_size,
-                mapped_data + offset + binding_offset
+                mapped_data + frame_offset + sampler_offset  // Use sampler_offset, not binding_offset!
             );
 
             std.debug.print("After writing combined (frame {}):\n", .{i});
-            hexDump(mapped_data + offset + binding_offset, 32);
+            hexDump(mapped_data + frame_offset + sampler_offset, 64); // Increase to 64 bytes
         }
         
         self.device.unmapMemory(self.descriptor_buffer_memory);
