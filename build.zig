@@ -79,7 +79,7 @@ pub fn build(b: *std.Build) void {
         lesson_exe_mod.addImport("obj", obj_mod);
 
         const lesson_exe = b.addExecutable(.{
-            .name = lesson_name,
+            .name = lesson_name[0..2],
             .root_module = lesson_exe_mod,
         });
 

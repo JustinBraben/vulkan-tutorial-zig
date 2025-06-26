@@ -1,0 +1,602 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "00",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/00",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 00",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "01",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/01",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 01",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "02",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/02",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 02",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "03",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/03",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 03",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "04",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/04",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 04",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "05",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/05",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 05",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "06",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/06",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 06",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "07",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/07",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 07",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "08",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/08",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 08",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "09",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/09",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 09",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "10",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/10",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 10",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "11",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/11",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 11",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "12",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/12",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 12",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "13",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/13",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 13",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "14",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/14",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 14",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "15",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/15",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 15",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "16",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/16",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 16",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "17",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/17",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 17",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "18",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/18",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 18",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "19",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/19",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 19",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "20",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/20",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 20",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "21",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/21",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 21",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "22",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/22",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 22",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "23",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/23",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 23",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "24",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/24",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 24",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "25",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/25",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 25",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "26",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/26",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 26",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "27",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/27",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 27",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "28",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/28",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 28",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "29",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/29",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 29",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "30",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/30",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 30",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "31",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/31",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 31",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+        {
+            "name": "32",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/32",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "preLaunchTask": "build 32",
+            "osx": {
+                "MIMode": "lldb"
+            },
+            "windows": {
+                "type": "cppvsdbg",
+                "console": "integratedTerminal"
+            }
+        },
+    ]
+}

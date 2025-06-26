@@ -1,0 +1,384 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build 00",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "00"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 01",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "01"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 02",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "02"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 03",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "03"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 04",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "04"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 05",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "05"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 06",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "06"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 07",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "07"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 08",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "08"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 09",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "09"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 10",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "10"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 11",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "11"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 12",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "12"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 13",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "13"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 14",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "14"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 15",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "15"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 16",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "16"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 17",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "17"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 18",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "18"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 19",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "19"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 20",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "20"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 21",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "21"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 22",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "22"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 23",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "23"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 24",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "24"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 25",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "25"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 26",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "26"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 27",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "27"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 28",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "28"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 29",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "29"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 30",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "30"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 31",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "31"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build 32",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "32"
+            ],
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "build all",
+            "type": "shell",
+            "command": "zig",
+            "args": [
+                "build",
+                "all"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

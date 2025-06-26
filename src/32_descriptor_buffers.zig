@@ -1318,13 +1318,6 @@ const HelloTriangleApplication = struct {
             std.debug.print("After writing UBO (frame {}):\n", .{i});
             hexDump(mapped_data + frame_offset, 32);
             
-            // Get the offset for binding 1
-            const binding_offset = self.device.getDescriptorSetLayoutBindingOffsetEXT(
-                self.descriptor_set_layout, 
-                1
-            );
-            std.debug.print("Binding 1 offset: {d}\n", .{binding_offset});
-            
             // Write combined image sampler descriptor
             const sampler_descriptor_info = vk.DescriptorGetInfoEXT{
                 .type = .combined_image_sampler,
