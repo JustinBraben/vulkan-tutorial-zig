@@ -1,6 +1,6 @@
 const std = @import("std");
 const c = @cImport({
-    @cDefine("GLFW_INCLUDE_NONE", {});
+    @cDefine("GLFW_INCLUDE_VULKAN", {});
     @cInclude("GLFW/glfw3.h");
     @cDefine("STB_IMAGE_IMPLEMENTATION", {});
     @cInclude("stb/stb_image.h");

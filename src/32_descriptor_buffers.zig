@@ -30,7 +30,7 @@ const device_extensions = [_][*:0]const u8{
     vk.extensions.khr_buffer_device_address.name, // Required for descriptor buffer
     vk.extensions.ext_descriptor_indexing.name,    // Required dependency
     vk.extensions.khr_synchronization_2.name,
-    vk.extensions.khr_maintenance_3.name,
+    // vk.extensions.khr_maintenance_3.name,
     vk.extensions.ext_descriptor_buffer.name,
 };
 const macos_device_extensions = [_][*:0]const u8{vk.extensions.khr_portability_subset.name};
@@ -172,9 +172,6 @@ const HelloTriangleApplication = struct {
     uniform_buffers: ?[]vk.Buffer = null,
     uniform_buffers_memory: ?[]vk.DeviceMemory = null,
 
-    descriptor_pool: vk.DescriptorPool = .null_handle,
-    descriptor_sets: ?[]vk.DescriptorSet = null,
-
     // Add new descriptor buffer fields:
     descriptor_buffer: vk.Buffer = .null_handle,
     descriptor_buffer_memory: vk.DeviceMemory = .null_handle,
@@ -242,8 +239,6 @@ const HelloTriangleApplication = struct {
         try self.createVertexBuffer();
         try self.createIndexBuffer();
         try self.createUniformBuffers();
-        // try self.createDescriptorPool();
-        // try self.createDescriptorSets();
         try self.createDescriptorBuffer();
         try self.createCommandBuffers();
         try self.createSyncObjects();
@@ -305,9 +300,6 @@ const HelloTriangleApplication = struct {
             }
             self.allocator.free(self.uniform_buffers_memory.?);
         }
-
-        // if (self.descriptor_pool != .null_handle) self.device.destroyDescriptorPool(self.descriptor_pool, null);
-        // if (self.descriptor_sets != null) self.allocator.free(self.descriptor_sets.?);
 
         // Clean up descriptor buffer
         if (self.descriptor_buffer != .null_handle) self.device.destroyBuffer(self.descriptor_buffer, null);
@@ -1134,77 +1126,6 @@ const HelloTriangleApplication = struct {
         var i: usize = 0;
         while (i < MAX_FRAMES_IN_FLIGHT) : (i += 1) {
             try self.createBuffer(buffer_size, .{ .uniform_buffer_bit = true, .shader_device_address_bit = true, }, .{ .host_visible_bit = true, .host_coherent_bit = true }, &self.uniform_buffers.?[i], &self.uniform_buffers_memory.?[i]);
-        }
-    }
-
-    fn createDescriptorPool(self: *Self) !void {
-        const pool_sizes = [_]vk.DescriptorPoolSize{
-            .{
-                .type = .uniform_buffer,
-                .descriptor_count = MAX_FRAMES_IN_FLIGHT,
-            },
-            .{
-                .type = .combined_image_sampler,
-                .descriptor_count = MAX_FRAMES_IN_FLIGHT,
-            },
-        };
-        const pool_info = vk.DescriptorPoolCreateInfo{
-            .flags = .{},
-            .pool_size_count = pool_sizes.len,
-            .p_pool_sizes = &pool_sizes,
-            .max_sets = MAX_FRAMES_IN_FLIGHT,
-        };
-        self.descriptor_pool = try self.device.createDescriptorPool(&pool_info, null);
-    }
-
-    fn createDescriptorSets(self: *Self) !void {
-        const layouts = [_]vk.DescriptorSetLayout{ self.descriptor_set_layout, self.descriptor_set_layout };
-        const alloc_info = vk.DescriptorSetAllocateInfo{
-            .descriptor_pool = self.descriptor_pool,
-            .descriptor_set_count = MAX_FRAMES_IN_FLIGHT,
-            .p_set_layouts = &layouts,
-        };
-        self.descriptor_sets = try self.allocator.alloc(vk.DescriptorSet, MAX_FRAMES_IN_FLIGHT);
-
-        try self.device.allocateDescriptorSets(&alloc_info, self.descriptor_sets.?.ptr);
-
-        for (self.descriptor_sets.?, 0..) |descriptor_set, i| {
-            const buffer_info = [_]vk.DescriptorBufferInfo{.{
-                .buffer = self.uniform_buffers.?[i],
-                .offset = 0,
-                .range = @sizeOf(UniformBufferObject),
-            }};
-
-            const image_info = [_]vk.DescriptorImageInfo{.{
-                .image_layout = .shader_read_only_optimal,
-                .image_view = self.texture_image_view,
-                .sampler = self.texture_sampler,
-            }};
-
-            const descriptor_writes = [_]vk.WriteDescriptorSet{
-                .{
-                    .dst_set = descriptor_set,
-                    .dst_binding = 0,
-                    .dst_array_element = 0,
-                    .descriptor_type = .uniform_buffer,
-                    .descriptor_count = 1,
-                    .p_buffer_info = &buffer_info,
-                    .p_image_info = undefined,
-                    .p_texel_buffer_view = undefined,
-                },
-                .{
-                    .dst_set = descriptor_set,
-                    .dst_binding = 1,
-                    .dst_array_element = 0,
-                    .descriptor_type = .combined_image_sampler,
-                    .descriptor_count = 1,
-                    .p_buffer_info = undefined,
-                    .p_image_info = &image_info,
-                    .p_texel_buffer_view = undefined,
-                },
-            };
-
-            self.device.updateDescriptorSets(descriptor_writes.len, &descriptor_writes, 0, undefined);
         }
     }
 
