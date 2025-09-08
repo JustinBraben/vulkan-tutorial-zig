@@ -819,7 +819,7 @@ const HelloTriangleApplication = struct {
         try self.createImage(@intCast(tex_width), @intCast(tex_height), .r8g8b8a8_srgb, .optimal, .{ .transfer_dst_bit = true, .sampled_bit = true }, .{ .device_local_bit = true }, &self.texture_image, &self.texture_image_memory);
 
         try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .undefined, .transfer_dst_optimal);
-        try self.copyBufferToImage(staging_buffer, self.texture_image, @as(u32, @intCast(tex_width)), @intCast(tex_height));
+        try self.copyBufferToImage(staging_buffer, self.texture_image, @intCast(tex_width), @intCast(tex_height));
         try self.transitionImageLayout(self.texture_image, .r8g8b8a8_srgb, .transfer_dst_optimal, .shader_read_only_optimal);
 
         self.device.destroyBuffer(staging_buffer, null);

@@ -17,8 +17,8 @@
             .hash = "glfw-0.0.0-R5AeUm0HGgA_Rlrr9HR91ejkGd-K_JyCjkXz_U3b-jp9",
         },
         .zalgebra = .{
-            .url = "git+https://github.com/kooparse/zalgebra.git#412c3e1cddcf6b8494a6c008dd152c6e0ec5e846",
-            .hash = "zalgebra-0.0.0-aaiVSk5nAQA4CIV_flm1iIpWiSrVcxggA9y_aaa-TtdR",
+            .url = "git+https://github.com/kooparse/zalgebra.git#df88d0e930b6a49ba539a45c005826cdb57e70c6",
+            .hash = "zalgebra-0.0.0-aaiVSqhwAQCC7FarzEIQtMtlbL8CGfHXTZNirrd4tPwI",
         },
         .obj = .{
             .url = "git+https://github.com/chip2n/zig-obj.git#4ad4f6463b553395a1cd5388846d8623f350bf8b",

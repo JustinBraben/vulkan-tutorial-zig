@@ -42,6 +42,7 @@ const HelloTriangleApplication = struct {
     fn initWindow(self: *Self) !void {
         if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
         c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
+        c.glfwWindowHint(c.GLFW_RESIZABLE, c.GLFW_FALSE);
         self.window = c.glfwCreateWindow(
             WIDTH,
             HEIGHT,
@@ -77,7 +78,7 @@ const HelloTriangleApplication = struct {
             .application_version = @bitCast(vk.makeApiVersion(1, 0, 0, 0)),
             .p_engine_name = "No Engine",
             .engine_version = @bitCast(vk.makeApiVersion(1, 0, 0, 0)),
-            .api_version = @bitCast(vk.API_VERSION_1_2),
+            .api_version = @bitCast(vk.makeApiVersion(0, 1, 4, 0)),
         };
 
         var extension_names = std.ArrayList([*:0]const u8).init(std.heap.page_allocator);
@@ -86,6 +87,7 @@ const HelloTriangleApplication = struct {
         // glfw will get get them by default https://github.com/glfw/glfw/issues/2335
         if (is_macos) try extension_names.appendSlice(macos_extension_names[0..]);
 
+        // Get the required instance extensions from GLFW.
         var glfw_exts_count: u32 = 0;
         const glfw_exts = c.glfwGetRequiredInstanceExtensions(&glfw_exts_count);
         try extension_names.appendSlice(@ptrCast(glfw_exts[0..glfw_exts_count]));

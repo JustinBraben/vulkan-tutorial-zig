@@ -135,6 +135,7 @@ const lessons = [_][]const u8{
     "30_multisampling", 
     "31_camera", 
     "32_descriptor_buffers",
+    "33_improve_sync",
 };
 
 fn addShader(

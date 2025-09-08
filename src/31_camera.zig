@@ -248,7 +248,7 @@ const HelloTriangleApplication = struct {
         _ = c.glfwSetMouseButtonCallback(self.window, mouseButtonCallback);
 
         // Hide cursor for FPS-style camera
-        c.glfwSetInputMode(self.window, c.GLFW_CURSOR, c.GLFW_CURSOR_DISABLED);
+        // c.glfwSetInputMode(self.window, c.GLFW_CURSOR, c.GLFW_CURSOR_DISABLED);
     }
 
     fn framebufferResizeCallback(window: ?*c.GLFWwindow, _: c_int, _: c_int) callconv(.c) void {
@@ -259,11 +259,19 @@ const HelloTriangleApplication = struct {
     fn mouseCallback(window: ?*c.GLFWwindow, xpos: f64, ypos: f64) callconv(.c) void {
         var self: *Self = @ptrCast(@alignCast(c.glfwGetWindowUserPointer(window)));
 
+        if (!self.mouse_pressed) {
+            self.first_mouse = true;
+            self.mouse_last_x = xpos;
+            self.mouse_last_y = ypos;
+            return;
+        }
+
         if (self.first_mouse) {
             self.mouse_last_x = xpos;
             self.mouse_last_y = ypos;
             self.first_mouse = false;
         }
+
 
         const xoffset = xpos - self.mouse_last_x;
         const yoffset = self.mouse_last_y - ypos; // Reversed since y-coordinates go from bottom to top
@@ -1348,7 +1356,17 @@ const HelloTriangleApplication = struct {
     }
 
     fn loadModel(self: *Self) !void {
-        var model = try obj.parseObj(self.allocator, @embedFile(MODEL_PATH));
+        var file = std.fs.cwd().openFile(MODEL_PATH, .{}) catch |err| {
+            std.log.err("Could not open model file \"{s}\": {}", .{ MODEL_PATH, err });
+            return err;
+        };
+        defer file.close();
+        const file_size = try file.getEndPos();
+
+        const model_data = try file.readToEndAlloc(self.allocator, file_size);
+        defer self.allocator.free(model_data);
+
+        var model = try obj.parseObj(self.allocator, model_data);
         defer model.deinit(self.allocator);
 
         var unique_vertices = std.HashMap(Vertex, u32, Vertex.HashContext, std.hash_map.default_max_load_percentage).init(self.allocator);

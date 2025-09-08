@@ -1,5 +1,6 @@
 const std = @import("std");
 const c = @cImport({
+    // REQUIRED only for GLFW CreateWindowSurface.
     @cDefine("GLFW_INCLUDE_VULKAN", {});
     @cInclude("GLFW/glfw3.h");
     @cDefine("STB_IMAGE_IMPLEMENTATION", {});
@@ -13,6 +14,7 @@ pub const GLFW_TRUE = c.GLFW_TRUE;
 pub const GLFW_FALSE = c.GLFW_FALSE;
 pub const GLFW_CLIENT_API = c.GLFW_CLIENT_API;
 pub const GLFW_NO_API = c.GLFW_NO_API;
+pub const GLFW_RESIZABLE = c.GLFW_RESIZABLE;
 pub const GLFW_MOUSE_BUTTON_LEFT = c.GLFW_MOUSE_BUTTON_LEFT;
 pub const GLFW_PRESS = c.GLFW_PRESS;
 pub const GLFW_RELEASE = c.GLFW_RELEASE;

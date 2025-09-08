@@ -23,6 +23,7 @@ const HelloTriangleApplication = struct {
     fn initWindow(self: *Self) !void {
         if (c.glfwInit() != c.GLFW_TRUE) return error.GlfwInitFailed;
         c.glfwWindowHint(c.GLFW_CLIENT_API, c.GLFW_NO_API);
+        c.glfwWindowHint(c.GLFW_RESIZABLE, c.GLFW_FALSE);
         self.window = c.glfwCreateWindow(
         WIDTH,
         HEIGHT,

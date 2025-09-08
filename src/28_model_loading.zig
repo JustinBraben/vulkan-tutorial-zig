@@ -1086,7 +1086,17 @@ const HelloTriangleApplication = struct {
     }
 
     fn loadModel(self: *Self) !void {
-        var model = try obj.parseObj(self.allocator, @embedFile(MODEL_PATH));
+        var file = std.fs.cwd().openFile(MODEL_PATH, .{}) catch |err| {
+            std.log.err("Could not open model file \"{s}\": {}", .{ MODEL_PATH, err });
+            return err;
+        };
+        defer file.close();
+        const file_size = try file.getEndPos();
+
+        const model_data = try file.readToEndAlloc(self.allocator, file_size);
+        defer self.allocator.free(model_data);
+
+        var model = try obj.parseObj(self.allocator, model_data);
         defer model.deinit(self.allocator);
 
         var unique_vertices = std.HashMap(Vertex, u32, Vertex.HashContext, std.hash_map.default_max_load_percentage).init(self.allocator);
